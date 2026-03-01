@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { listCharacters } from "@/lib/characterStore";
 import { abilityMod } from "@/lib/dnd5e";
 import { 
@@ -22,11 +22,24 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
   const [selectedSkill, setSelectedSkill] = useState<string>("");
   const [selectedAbility, setSelectedAbility] = useState<string>("");
   const [damageDice, setDamageDice] = useState<string>("1d6");
+  const [damageAbility, setDamageAbility] = useState<string>("str");
+  const [attackAbility, setAttackAbility] = useState<string>("str");
+  const [magicBonus, setMagicBonus] = useState<number>(0);
   const [advantage, setAdvantage] = useState<'none' | 'advantage' | 'disadvantage'>('none');
   const [lastRoll, setLastRoll] = useState<RollResult | null>(null);
+  const [characters, setCharacters] = useState<any[]>([]);
 
-  // Load available characters
-  const characters = listCharacters() || [];
+  // Load available characters on mount
+  useEffect(() => {
+    try {
+      const loadedCharacters = listCharacters();
+      setCharacters(loadedCharacters);
+    } catch (error) {
+      console.error('Failed to load characters:', error);
+      setCharacters([]);
+    }
+  }, []);
+
   const selectedCharacter = characters.find(c => c.id === selectedCharacterId);
 
   const proficiencyBonus = selectedCharacter?.proficiencyBonusOverride ?? 
@@ -46,12 +59,14 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
   const skills = [
     { key: "athletics", label: "Atletismo", ability: "str" },
     { key: "acrobatics", label: "Acrobacia", ability: "dex" },
+    { key: "sleightOfHand", label: "Prestidigitação", ability: "dex" },
     { key: "stealth", label: "Furtividade", ability: "dex" },
     { key: "arcana", label: "Arcanismo", ability: "int" },
     { key: "history", label: "História", ability: "int" },
     { key: "investigation", label: "Investigação", ability: "int" },
     { key: "nature", label: "Natureza", ability: "int" },
     { key: "religion", label: "Religião", ability: "int" },
+    { key: "animalHandling", label: "Lidar com Animais", ability: "wis" },
     { key: "insight", label: "Intuição", ability: "wis" },
     { key: "medicine", label: "Medicina", ability: "wis" },
     { key: "perception", label: "Percepção", ability: "wis" },
@@ -93,6 +108,7 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
 
     const abilityModValue = abilityMod(selectedCharacter.abilities[skill.ability as keyof typeof selectedCharacter.abilities]);
     const isProficient = selectedCharacter.skillProficiencies[selectedSkill as keyof typeof selectedCharacter.skillProficiencies];
+    // TODO: Implement expertise system - for now, Rogues get expertise in Thieves' Tools, Bards in chosen skills
     const isExpertise = false;
 
     const result = rollSkillCheck(abilityModValue, isProficient ? proficiencyBonus : 0, isExpertise, advantage);
@@ -116,18 +132,20 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
   const handleAttackRoll = () => {
     if (!selectedCharacter) return;
 
-    const strMod = abilityMod(selectedCharacter.abilities.str);
-    const result = rollAttack(proficiencyBonus, strMod, 0, advantage);
-    createRoll('attack', 'Attack', result);
+    const attackMod = abilityMod(selectedCharacter.abilities[attackAbility as keyof typeof selectedCharacter.abilities]);
+    const result = rollAttack(proficiencyBonus, attackMod, magicBonus, advantage);
+    const abilityLabel = abilities.find(a => a.key === attackAbility)?.label || attackAbility;
+    createRoll('attack', `Ataque (${abilityLabel})`, result);
   };
 
   // Damage roll
   const handleDamageRoll = (critical: boolean = false) => {
     if (!selectedCharacter) return;
 
-    const strMod = abilityMod(selectedCharacter.abilities.str);
-    const result = rollDamage(damageDice, strMod, critical);
-    createRoll('damage', `Dano${critical ? ' (Crítico)' : ''}`, result);
+    const damageMod = abilityMod(selectedCharacter.abilities[damageAbility as keyof typeof selectedCharacter.abilities]);
+    const result = rollDamage(damageDice, damageMod, critical);
+    const abilityLabel = abilities.find(a => a.key === damageAbility)?.label || damageAbility;
+    createRoll('damage', `Dano (${abilityLabel})${critical ? ' (Crítico)' : ''}`, result);
   };
 
   // Initiative roll
@@ -276,13 +294,41 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
             {/* Ações Rápidas */}
             <div className="mb-4">
               <label className="text-xs font-medium text-[var(--app-muted)]">Ações Rápidas</label>
+              
+              {/* Configuração de Ataque */}
+              <div className="mb-3 p-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)]">
+                <div className="text-xs font-medium text-[var(--app-fg)] mb-2">Configuração de Ataque</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <select
+                    className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--app-fg)] [color-scheme:dark]"
+                    value={attackAbility}
+                    onChange={(e) => setAttackAbility(e.target.value)}
+                  >
+                    {abilities.map(ability => (
+                      <option key={ability.key} value={ability.key}>
+                        {ability.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--app-fg)]"
+                    value={magicBonus}
+                    onChange={(e) => setMagicBonus(parseInt(e.target.value) || 0)}
+                    placeholder="Bônus Mágico"
+                    min="0"
+                    max="10"
+                  />
+                  <button
+                    className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--app-fg)] hover:bg-[var(--app-border)]"
+                    onClick={handleAttackRoll}
+                  >
+                    ⚔️ Ataque
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-2 mt-1">
-                <button
-                  className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)] hover:bg-[var(--app-border)]"
-                  onClick={handleAttackRoll}
-                >
-                  ⚔️ Ataque
-                </button>
                 <button
                   className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)] hover:bg-[var(--app-border)]"
                   onClick={handleInitiativeRoll}
@@ -303,6 +349,17 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
                   onChange={(e) => setDamageDice(e.target.value)}
                   placeholder="1d6"
                 />
+                <select
+                  className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)] [color-scheme:dark]"
+                  value={damageAbility}
+                  onChange={(e) => setDamageAbility(e.target.value)}
+                >
+                  {abilities.map(ability => (
+                    <option key={ability.key} value={ability.key}>
+                      {ability.label}
+                    </option>
+                  ))}
+                </select>
                 <button
                   className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
                   onClick={() => handleDamageRoll(false)}

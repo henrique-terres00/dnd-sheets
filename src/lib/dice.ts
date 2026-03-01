@@ -31,6 +31,9 @@ export function rollDice(formula: string, modifier: number = 0): RollResult {
   let total = modifier;
   let details = '';
 
+  // Reset regex state
+  diceRegex.lastIndex = 0;
+
   // Processar cada dado na fórmula
   let match;
   while ((match = diceRegex.exec(formula)) !== null) {
@@ -72,15 +75,25 @@ export function rollDice(formula: string, modifier: number = 0): RollResult {
 // Rolagem de d20 com vantagem/desvantagem
 export function rollD20(advantage: 'none' | 'advantage' | 'disadvantage' = 'none'): RollResult {
   if (advantage === 'none') {
-    return rollDice('1d20');
+    // Use direct roll instead of rollDice to avoid regex issues
+    const roll = Math.floor(Math.random() * 20) + 1;
+    return {
+      total: roll,
+      rolls: [roll],
+      modifier: 0,
+      formula: '1d20',
+      details: `1d20[${roll}]`,
+      critical: roll === 20 ? 'success' : roll === 1 ? 'failure' : undefined
+    };
   }
 
-  const roll1 = rollDice('1d20');
-  const roll2 = rollDice('1d20');
+  // Roll two separate d20s
+  const roll1 = Math.floor(Math.random() * 20) + 1;
+  const roll2 = Math.floor(Math.random() * 20) + 1;
   
   const chosenRoll = advantage === 'advantage' 
-    ? Math.max(roll1.rolls[0], roll2.rolls[0])
-    : Math.min(roll1.rolls[0], roll2.rolls[0]);
+    ? Math.max(roll1, roll2)
+    : Math.min(roll1, roll2);
 
   const critical = chosenRoll === 20 ? 'success' : chosenRoll === 1 ? 'failure' : undefined;
 
@@ -90,8 +103,8 @@ export function rollD20(advantage: 'none' | 'advantage' | 'disadvantage' = 'none
     modifier: 0,
     formula: advantage === 'advantage' ? '1d20 (Vantagem)' : '1d20 (Desvantagem)',
     details: advantage === 'advantage' 
-      ? `d20[${roll1.rolls[0]}, ${roll2.rolls[0]}] → ${chosenRoll}`
-      : `d20[${roll1.rolls[0]}, ${roll2.rolls[0]}] → ${chosenRoll}`,
+      ? `d20[${roll1}, ${roll2}] → ${chosenRoll}`
+      : `d20[${roll1}, ${roll2}] → ${chosenRoll}`,
     critical
   };
 }
