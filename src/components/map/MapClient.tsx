@@ -287,12 +287,8 @@ export default function MapClient() {
   };
 
   const PRESET_MAPS: Array<{ label: string; src: string }> = [
-    { label: "Forest 1", src: "/maps/map_1.jpg" },
-    { label: "Village", src: "/maps/map_2.jpg" },
-    { label: "Rock Bridge", src: "/maps/map_3.jpg" },
-    { label: "Dungeon", src: "/maps/map_4.jpeg" },
-    { label: "Forest 2", src: "/maps/map_5.jpg" },
-    { label: "Forest 3", src: "/maps/map_6.jpg" },
+    { label: "Forest", src: "/maps/forest.jpg" },
+    { label: "Swamp", src: "/maps/swamp.jpg" },
     { label: "Grid (sem imagem)", src: "" },
   ];
 

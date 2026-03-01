@@ -35,17 +35,6 @@ export default function Home() {
           </Link>
         </div>
       </div>
-
-      <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-[var(--app-fg)]">Próximos passos do MVP</h2>
-        <div className="mt-2 text-sm text-[var(--app-muted)]">
-          1) CRUD de personagens e campanhas
-          <br />
-          2) Mapa com grid + snap + tokens
-          <br />
-          3) Importação de mapas e ícones
-        </div>
-      </div>
     </div>
   );
 }
