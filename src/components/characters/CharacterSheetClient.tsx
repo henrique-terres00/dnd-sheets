@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { abilityMod, formatSigned, proficiencyBonusFromLevel, SKILL_TO_ABILITY } from "@/lib/dnd5e";
 import { getCharacter, upsertCharacter } from "@/lib/characterStore";
 import { getSrdClass, getSrdRace, SRD_CLASSES, SRD_RACES } from "@/lib/srd";
+import { CharacterEquipment } from "@/components/equipment/CharacterEquipment";
+import { calculateArmorClass } from "@/lib/equipmentUtils";
 import type { Ability, Character, Skill } from "@/lib/types";
 
 const ABILITIES: { key: Ability; label: string }[] = [
@@ -202,6 +204,16 @@ export default function CharacterSheetClient({ id }: { id: string }) {
     const prof = character.skillProficiencies.perception ? pb : 0;
     return 10 + wis + prof;
   }, [character, pb]);
+
+  // Calculate AC automatically from equipped armor and shield
+  const calculatedAC = useMemo(() => {
+    if (!character) return 10;
+    return calculateArmorClass(
+      character.characterEquipment?.armor || null,
+      character.characterEquipment?.shield || null,
+      character.abilities.dex
+    );
+  }, [character]);
 
   const update = (patch: Partial<Character>) => {
     if (!character) return;
@@ -529,8 +541,9 @@ export default function CharacterSheetClient({ id }: { id: string }) {
                   <input
                     className={inputClass()}
                     type="number"
-                    value={character.armorClass}
-                    onChange={(e) => update({ armorClass: Number(e.target.value) || 10 })}
+                    value={calculatedAC}
+                    readOnly
+                    title="CA calculada automaticamente baseada em armadura e escudo equipados"
                   />
                 </div>
                 <div>
@@ -794,10 +807,9 @@ export default function CharacterSheetClient({ id }: { id: string }) {
             </div>
             <div className={boxClass()}>
               <div className="text-sm font-semibold">Equipamento</div>
-              <textarea
-                className={`${inputClass()} mt-3 min-h-[240px] resize-y`}
-                value={character.equipment}
-                onChange={(e) => update({ equipment: e.target.value })}
+              <CharacterEquipment 
+                character={character}
+                onUpdate={(equipment) => update({ characterEquipment: equipment })}
               />
             </div>
           </div>

@@ -72,6 +72,45 @@ export function rollDice(formula: string, modifier: number = 0): RollResult {
   };
 }
 
+// Função alternativa que não usa regex para evitar problemas de estado
+export function rollDiceSimple(formula: string, modifier: number = 0): RollResult {
+  // Parse manual da fórmula de dado (ex: "1d4", "2d6")
+  const parts = formula.split('d');
+  if (parts.length !== 2) {
+    // Se não for uma fórmula de dado válida, retorna só o modificador
+    return {
+      total: modifier,
+      rolls: [],
+      modifier,
+      formula: formula,
+      details: modifier !== 0 ? `+ ${modifier}` : ''
+    };
+  }
+
+  const count = parseInt(parts[0]) || 1;
+  const sides = parseInt(parts[1]) || 6;
+  
+  const rolls: number[] = [];
+  let total = modifier;
+  
+  for (let i = 0; i < count; i++) {
+    const roll = Math.floor(Math.random() * sides) + 1;
+    rolls.push(roll);
+    total += roll;
+  }
+
+  const details = `${count}d${sides}[${rolls.join(', ')}]${modifier !== 0 ? ` + ${modifier}` : ''}`;
+  const formulaDisplay = `${formula}${modifier > 0 ? `+${modifier}` : modifier < 0 ? `${modifier}` : ''}`;
+
+  return {
+    total,
+    rolls,
+    modifier,
+    formula: formulaDisplay,
+    details
+  };
+}
+
 // Rolagem de d20 com vantagem/desvantagem
 export function rollD20(advantage: 'none' | 'advantage' | 'disadvantage' = 'none'): RollResult {
   if (advantage === 'none') {
@@ -150,26 +189,23 @@ export function rollSkillCheck(
 
 // Rolagem de dano
 export function rollDamage(dice: string, abilityMod: number = 0, critical: boolean = false): RollResult {
-  const baseRoll = rollDice(dice);
-  const criticalDice = critical ? rollDice(dice) : { total: 0, rolls: [], modifier: 0, formula: '', details: '' };
+  const baseRoll = rollDiceSimple(dice, abilityMod);
+  const criticalDice = critical ? rollDiceSimple(dice, 0) : { total: 0, rolls: [], modifier: 0, formula: '', details: '' };
   
-  const total = baseRoll.total + abilityMod + criticalDice.total;
+  const total = baseRoll.total + criticalDice.total;
   const allRolls = [...baseRoll.rolls, ...criticalDice.rolls];
   
   let details = baseRoll.details;
   if (critical && criticalDice.rolls.length > 0) {
     details += ` + CRIT[${criticalDice.rolls.join(', ')}]`;
   }
-  if (abilityMod !== 0) {
-    details += ` + ${abilityMod}`;
-  }
 
   return {
     total,
     rolls: allRolls,
-    modifier: abilityMod,
-    formula: (critical ? `2×${dice}` : dice) + (abilityMod > 0 ? `+${abilityMod}` : ''),
-    details: details || '0'
+    modifier: baseRoll.modifier,
+    formula: baseRoll.formula,
+    details
   };
 }
 

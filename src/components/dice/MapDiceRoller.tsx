@@ -11,6 +11,7 @@ import {
   type RollResult 
 } from "@/lib/dice";
 import { addRollToLog, type DiceRoll } from "@/lib/rollLog";
+import { calculateArmorClass } from "@/lib/equipmentUtils";
 
 interface MapDiceRollerProps {
   isOpen: boolean;
@@ -21,9 +22,10 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>("");
   const [selectedSkill, setSelectedSkill] = useState<string>("");
   const [selectedAbility, setSelectedAbility] = useState<string>("");
-  const [damageDice, setDamageDice] = useState<string>("1d6");
-  const [damageAbility, setDamageAbility] = useState<string>("str");
+  const [selectedWeaponId, setSelectedWeaponId] = useState<string>("");
   const [attackAbility, setAttackAbility] = useState<string>("str");
+  const [damageAbility, setDamageAbility] = useState<string>("str");
+  const [damageDice, setDamageDice] = useState<string>("1d6");
   const [magicBonus, setMagicBonus] = useState<number>(0);
   const [advantage, setAdvantage] = useState<'none' | 'advantage' | 'disadvantage'>('none');
   const [lastRoll, setLastRoll] = useState<RollResult | null>(null);
@@ -41,6 +43,16 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
   }, []);
 
   const selectedCharacter = characters.find(c => c.id === selectedCharacterId);
+
+  // Auto-select first weapon when character changes
+  useEffect(() => {
+    if (selectedCharacter && selectedCharacter.characterEquipment?.weapons && selectedCharacter.characterEquipment.weapons.length > 0) {
+      const firstWeapon = selectedCharacter.characterEquipment.weapons[0];
+      setSelectedWeaponId(firstWeapon.id);
+    } else {
+      setSelectedWeaponId('');
+    }
+  }, [selectedCharacter]);
 
   const proficiencyBonus = selectedCharacter?.proficiencyBonusOverride ?? 
     Math.floor((selectedCharacter?.level || 1) / 4) + 2;
@@ -132,20 +144,58 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
   const handleAttackRoll = () => {
     if (!selectedCharacter) return;
 
-    const attackMod = abilityMod(selectedCharacter.abilities[attackAbility as keyof typeof selectedCharacter.abilities]);
-    const result = rollAttack(proficiencyBonus, attackMod, magicBonus, advantage);
-    const abilityLabel = abilities.find(a => a.key === attackAbility)?.label || attackAbility;
-    createRoll('attack', `Ataque (${abilityLabel})`, result);
+    // Check if character has weapons equipped
+    const equippedWeapons = selectedCharacter.characterEquipment?.weapons || [];
+    
+    if (equippedWeapons.length === 0) {
+      // Fallback to manual selection if no weapons equipped
+      const attackMod = abilityMod(selectedCharacter.abilities[attackAbility as keyof typeof selectedCharacter.abilities]);
+      const result = rollAttack(proficiencyBonus, attackMod, magicBonus, advantage);
+      const abilityLabel = abilities.find(a => a.key === attackAbility)?.label || attackAbility;
+      createRoll('attack', `Ataque (${abilityLabel})`, result);
+      return;
+    }
+
+    // Use selected weapon or first weapon if none selected
+    const weapon = selectedWeaponId 
+      ? equippedWeapons.find((w: any) => w.id === selectedWeaponId) || equippedWeapons[0]
+      : equippedWeapons[0];
+    
+    const weaponAbility = weapon.ability || 'str';
+    const abilityScore = selectedCharacter.abilities[weaponAbility];
+    const attackMod = abilityMod(abilityScore);
+    
+    const result = rollAttack(proficiencyBonus, attackMod, weapon.magicalBonus, advantage);
+    createRoll('attack', `Ataque com ${weapon.name}`, result);
   };
 
   // Damage roll
   const handleDamageRoll = (critical: boolean = false) => {
     if (!selectedCharacter) return;
 
-    const damageMod = abilityMod(selectedCharacter.abilities[damageAbility as keyof typeof selectedCharacter.abilities]);
-    const result = rollDamage(damageDice, damageMod, critical);
-    const abilityLabel = abilities.find(a => a.key === damageAbility)?.label || damageAbility;
-    createRoll('damage', `Dano (${abilityLabel})${critical ? ' (Crítico)' : ''}`, result);
+    // Check if character has weapons equipped
+    const equippedWeapons = selectedCharacter.characterEquipment?.weapons || [];
+    
+    if (equippedWeapons.length === 0) {
+      // Fallback to manual selection if no weapons equipped
+      const damageMod = abilityMod(selectedCharacter.abilities[damageAbility as keyof typeof selectedCharacter.abilities]);
+      const result = rollDamage(damageDice, damageMod, critical);
+      const abilityLabel = abilities.find(a => a.key === damageAbility)?.label || damageAbility;
+      createRoll('damage', `Dano (${abilityLabel})${critical ? ' (Crítico)' : ''}`, result);
+      return;
+    }
+
+    // Use selected weapon or first weapon if none selected
+    const weapon = selectedWeaponId 
+      ? equippedWeapons.find((w: any) => w.id === selectedWeaponId) || equippedWeapons[0]
+      : equippedWeapons[0];
+    
+    const weaponAbility = weapon.ability || 'str';
+    const abilityScore = selectedCharacter.abilities[weaponAbility];
+    const damageMod = abilityMod(abilityScore);
+    
+    const result = rollDamage(weapon.damage, damageMod, critical);
+    createRoll('damage', `Dano de ${weapon.name}${critical ? ' (Crítico)' : ''}`, result);
   };
 
   // Initiative roll
@@ -195,7 +245,11 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
             <option value="">Selecionar personagem...</option>
             {characters.map(character => (
               <option key={character.id} value={character.id}>
-                {character.name || "Personagem sem nome"} (Nível {character.level || 1})
+                {character.name} (CA: {character ? calculateArmorClass(
+                  character.characterEquipment?.armor || null,
+                  character.characterEquipment?.shield || null,
+                  character.abilities.dex
+                ) : 10})
               </option>
             ))}
           </select>
@@ -298,6 +352,25 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
               {/* Configuração de Ataque */}
               <div className="mb-3 p-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)]">
                 <div className="text-xs font-medium text-[var(--app-fg)] mb-2">Configuração de Ataque</div>
+                
+                {/* Weapon Selector */}
+                {(selectedCharacter.characterEquipment?.weapons || []).length > 0 && (
+                  <div className="mb-2">
+                    <label className="text-xs text-[var(--app-muted)]">Arma Equipada</label>
+                    <select
+                      className="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--app-fg)] [color-scheme:dark]"
+                      value={selectedWeaponId}
+                      onChange={(e) => setSelectedWeaponId(e.target.value)}
+                    >
+                      {(selectedCharacter.characterEquipment?.weapons || []).map((weapon: any) => (
+                        <option key={weapon.id} value={weapon.id}>
+                          {weapon.name} ({weapon.damage} {weapon.damageType})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <select
                     className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--app-fg)] [color-scheme:dark]"
@@ -341,6 +414,25 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
             {/* Dano */}
             <div className="mb-4">
               <label className="text-xs font-medium text-[var(--app-muted)]">Dano</label>
+              
+              {/* Weapon Selector for Damage */}
+              {(selectedCharacter.characterEquipment?.weapons || []).length > 0 && (
+                <div className="mb-2">
+                  <label className="text-xs text-[var(--app-muted)]">Arma Equipada</label>
+                  <select
+                    className="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--app-fg)] [color-scheme:dark]"
+                    value={selectedWeaponId}
+                    onChange={(e) => setSelectedWeaponId(e.target.value)}
+                  >
+                    {(selectedCharacter.characterEquipment?.weapons || []).map((weapon: any) => (
+                      <option key={weapon.id} value={weapon.id}>
+                        {weapon.name} ({weapon.damage} {weapon.damageType})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mt-1">
                 <input
                   type="text"

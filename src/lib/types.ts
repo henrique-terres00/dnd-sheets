@@ -81,4 +81,12 @@ export type Character = {
   backstory: string;
   alliesAndOrganizations: string;
   treasure: string;
+
+  // New equipment system
+  characterEquipment?: {
+    weapons: any[];
+    armor: any;
+    shield: any;
+    equipment: any[];
+  };
 };
