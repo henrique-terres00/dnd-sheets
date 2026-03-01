@@ -25,14 +25,14 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
   const [advantage, setAdvantage] = useState<'none' | 'advantage' | 'disadvantage'>('none');
   const [lastRoll, setLastRoll] = useState<RollResult | null>(null);
 
-  // Carregar personagens disponíveis
+  // Load available characters
   const characters = listCharacters() || [];
   const selectedCharacter = characters.find(c => c.id === selectedCharacterId);
 
   const proficiencyBonus = selectedCharacter?.proficiencyBonusOverride ?? 
     Math.floor((selectedCharacter?.level || 1) / 4) + 2;
 
-  // Habilidades para testes
+  // Abilities for checks
   const abilities = [
     { key: "str", label: "Força" },
     { key: "dex", label: "Destreza" },
@@ -42,7 +42,7 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
     { key: "cha", label: "Carisma" }
   ];
 
-  // Perícias para testes
+  // Skills for checks
   const skills = [
     { key: "athletics", label: "Atletismo", ability: "str" },
     { key: "acrobatics", label: "Acrobacia", ability: "dex" },
@@ -62,7 +62,7 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
     { key: "persuasion", label: "Persuasão", ability: "cha" }
   ];
 
-  // Função para criar e registrar uma rolagem no log
+  // Function to create and register a roll in the log
   const createRoll = (type: DiceRoll['type'], label: string, result: RollResult) => {
     if (!selectedCharacter) return;
 
@@ -84,7 +84,7 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
     setLastRoll(result);
   };
 
-  // Rolagem de perícia
+  // Skill roll
   const handleSkillRoll = () => {
     if (!selectedCharacter || !selectedSkill) return;
 
@@ -99,7 +99,7 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
     createRoll('skill', skill.label, result);
   };
 
-  // Rolagem de teste de habilidade
+  // Ability check roll
   const handleAbilityRoll = () => {
     if (!selectedCharacter || !selectedAbility) return;
 
@@ -112,16 +112,16 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
     }
   };
 
-  // Rolagem de ataque
+  // Attack roll
   const handleAttackRoll = () => {
     if (!selectedCharacter) return;
 
     const strMod = abilityMod(selectedCharacter.abilities.str);
     const result = rollAttack(proficiencyBonus, strMod, 0, advantage);
-    createRoll('attack', 'Ataque', result);
+    createRoll('attack', 'Attack', result);
   };
 
-  // Rolagem de dano
+  // Damage roll
   const handleDamageRoll = (critical: boolean = false) => {
     if (!selectedCharacter) return;
 
@@ -130,7 +130,7 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
     createRoll('damage', `Dano${critical ? ' (Crítico)' : ''}`, result);
   };
 
-  // Rolagem de iniciativa
+  // Initiative roll
   const handleInitiativeRoll = () => {
     if (!selectedCharacter) return;
 
@@ -139,7 +139,7 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
     createRoll('initiative', 'Iniciativa', result);
   };
 
-  // Rolagem de salvaguarda
+  // Saving throw roll
   const handleSavingThrowRoll = (ability: string) => {
     if (!selectedCharacter) return;
 

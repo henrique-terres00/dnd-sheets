@@ -382,7 +382,7 @@ export default function MapClient() {
             {isCreatingEnemy ? (
               <div className="flex flex-wrap items-center gap-2">
                 <input
-                  className="w-44 rounded-lg border border-[var(--app-border)] bg-black/20 px-3 py-2 text-sm text-[var(--app-fg)]"
+                  className="w-44 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)]"
                   value={newEnemyName}
                   onChange={(e) => setNewEnemyName(e.target.value)}
                   placeholder="Nome"
@@ -437,13 +437,13 @@ export default function MapClient() {
           </button>
           <Link
             href="/characters"
-            className="rounded-lg border border-[var(--app-border)] bg-black/20 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-black/30"
+            className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
           >
             Ver fichas
           </Link>
         <div className="flex items-center gap-2">
           <button
-            className="rounded-lg border border-[var(--app-border)] bg-black/20 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-black/30"
+            className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
             onClick={reset}
             type="button"
           >
@@ -456,12 +456,12 @@ export default function MapClient() {
           Dica: clique com o botão direito em um token para remover.
         </div>
 
-        <div className="flex flex-col gap-2 rounded-xl border border-[var(--app-border)] bg-black/15 p-3">
+        <div className="flex flex-col gap-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-bg)] p-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm font-medium">Background do mapa</div>
             <button
               type="button"
-              className="w-fit rounded-lg border border-[var(--app-border)] bg-black/20 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-black/30"
+              className="w-fit rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
               onClick={() => setBackground({ kind: "none" })}
             >
               Remover background
@@ -526,7 +526,7 @@ export default function MapClient() {
 
       <div
         ref={containerRef}
-        className="relative h-[70vh] w-full overflow-hidden rounded-2xl border border-[var(--app-border)] bg-black/10 shadow-sm"
+        className="relative h-[70vh] w-full overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-bg)] shadow-sm"
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         style={{

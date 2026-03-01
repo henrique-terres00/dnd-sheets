@@ -12,13 +12,13 @@ export default function NewCharacterPage() {
     try {
       window.sessionStorage.setItem(`dnd-sheets.character-draft.${character.id}`, JSON.stringify(character));
     } catch {
-      // ignore
+      // ignore sessionStorage errors
     }
     router.replace(`/characters/${character.id}?draft=1`);
   }, [router]);
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+    <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-sm text-[var(--app-muted)] shadow-sm">
       Criando personagem...
     </div>
   );

@@ -211,7 +211,7 @@ export default function CharacterSheetClient({ id }: { id: string }) {
       try {
         window.sessionStorage.setItem(`dnd-sheets.character-draft.${id}`, JSON.stringify(next));
       } catch {
-        // ignore
+        // ignore sessionStorage errors
       }
       return;
     }
@@ -224,7 +224,7 @@ export default function CharacterSheetClient({ id }: { id: string }) {
       try {
         window.sessionStorage.setItem(`dnd-sheets.character-draft.${id}`, JSON.stringify(next));
       } catch {
-        // ignore
+        // ignore sessionStorage errors
       }
       return;
     }

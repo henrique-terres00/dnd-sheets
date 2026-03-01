@@ -7,7 +7,7 @@ export function RollLog() {
   const { rolls, clearLog, formatMessage } = useRollLog();
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll para o final quando novas rolagens são adicionadas
+  // Auto-scroll to end when new rolls are added
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [rolls]);
