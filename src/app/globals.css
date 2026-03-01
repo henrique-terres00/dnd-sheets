@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  --background: #14100b;
+  --foreground: #f3ead8;
+
+  --app-bg: var(--background);
+  --app-fg: var(--foreground);
+  --app-muted: #d6c2a3;
+  --app-surface: rgba(22, 18, 12, 0.78);
+  --app-border: rgba(243, 234, 216, 0.14);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-medieval-body);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f0c08;
+    --foreground: #f6eedf;
+
+    --app-bg: var(--background);
+    --app-fg: var(--foreground);
+    --app-muted: #e2cfad;
+    --app-surface: rgba(18, 14, 10, 0.78);
+    --app-border: rgba(246, 238, 223, 0.16);
+  }
+}
+
+html {
+  font-size: 20px;
+}
+
+body {
+  background:
+    radial-gradient(900px 520px at 50% -10%, rgba(255, 166, 61, 0.14), transparent 55%),
+    radial-gradient(800px 600px at 20% 10%, rgba(255, 200, 120, 0.08), transparent 60%),
+    radial-gradient(700px 520px at 80% 12%, rgba(180, 120, 55, 0.06), transparent 58%),
+    radial-gradient(1200px 900px at 50% 60%, rgba(0, 0, 0, 0.55), transparent 70%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.25), transparent 45%),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-medieval-body), ui-serif, Georgia, "Times New Roman", serif;
+  line-height: 1.55;
+}
