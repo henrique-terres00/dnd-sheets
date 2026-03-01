@@ -14,7 +14,7 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Link
             href="/campaigns"
             className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
@@ -32,12 +32,6 @@ export default function Home() {
             className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
           >
             Mapa
-          </Link>
-          <Link
-            href="/rolls"
-            className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
-          >
-            🎲 Rolagens
           </Link>
         </div>
       </div>

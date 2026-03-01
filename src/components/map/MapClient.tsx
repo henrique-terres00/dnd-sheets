@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getCharacter, listCharacters } from "@/lib/characterStore";
 import type { Character } from "@/lib/types";
+import { MapDiceRoller } from "@/components/dice/MapDiceRoller";
+import { InlineRollLog } from "@/components/dice/InlineRollLog";
 
 type TokenKind = "elf" | "dwarf" | "orc" | "dragon" | "goblin" | "skeleton";
 
@@ -203,6 +205,7 @@ export default function MapClient() {
   const [selectedEnemyId, setSelectedEnemyId] = useState<string>("");
   const [newEnemyName, setNewEnemyName] = useState<string>("");
   const [newEnemyImageDataUrl, setNewEnemyImageDataUrl] = useState<string>("");
+  const [isDiceRollerOpen, setIsDiceRollerOpen] = useState<boolean>(false);
 
   const isCreatingEnemy = selectedEnemyId === "__new__";
 
@@ -376,7 +379,6 @@ export default function MapClient() {
             >
               Adicionar Inimigo
             </button>
-
             {isCreatingEnemy ? (
               <div className="flex flex-wrap items-center gap-2">
                 <input
@@ -409,46 +411,45 @@ export default function MapClient() {
                 </button>
               </div>
             ) : null}
-
-            <div className="h-6 w-px bg-[var(--app-border)]" />
-
-            <select
-              className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)] [color-scheme:dark]"
-              value={selectedCharacterId}
-              onChange={(e) => setSelectedCharacterId(e.target.value)}
-            >
-              <option value="">Adicionar personagem...</option>
-              {characters.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name || "(Sem nome)"}
-                </option>
-              ))}
-            </select>
-            <button
-              className="rounded-lg border border-[var(--app-border)] bg-amber-500/15 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={addCharacterToken}
-              type="button"
-              disabled={!selectedCharacterId}
-            >
-              Adicionar Personagem
-            </button>
-            <Link
-              href="/characters"
-              className="rounded-lg border border-[var(--app-border)] bg-black/20 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-black/30"
-            >
-              Ver fichas
-            </Link>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              className="rounded-lg border border-[var(--app-border)] bg-black/20 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-black/30"
-              onClick={reset}
-              type="button"
-            >
-              Reset
-            </button>
-          </div>
+          <div className="h-6 w-px bg-[var(--app-border)]" />
+
+          <select
+            className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)] [color-scheme:dark]"
+            value={selectedCharacterId}
+            onChange={(e) => setSelectedCharacterId(e.target.value)}
+          >
+            <option value="">Adicionar personagem...</option>
+            {characters.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name || "(Sem nome)"}
+              </option>
+            ))}
+          </select>
+          <button
+            className="rounded-lg border border-[var(--app-border)] bg-amber-500/15 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={addCharacterToken}
+            type="button"
+            disabled={!selectedCharacterId}
+          >
+            Adicionar Personagem
+          </button>
+          <Link
+            href="/characters"
+            className="rounded-lg border border-[var(--app-border)] bg-black/20 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-black/30"
+          >
+            Ver fichas
+          </Link>
+        <div className="flex items-center gap-2">
+          <button
+            className="rounded-lg border border-[var(--app-border)] bg-black/20 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-black/30"
+            onClick={reset}
+            type="button"
+          >
+            Reset
+          </button>
+        </div>
         </div>
 
         <div className="text-xs text-[var(--app-muted)]">
@@ -509,6 +510,18 @@ export default function MapClient() {
             Mapas padrão ficam em <span className="font-mono">public/maps</span>. Uploads são salvos no seu navegador.
           </div>
         </div>
+      </div>
+
+      {/* Seção de Rolagem de Dados */}
+      <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+        <button
+          className="rounded-xl border border-[var(--app-border)] bg-purple-500/20 px-4 py-3 text-sm font-medium text-[var(--app-fg)] hover:bg-purple-500/30"
+          onClick={() => setIsDiceRollerOpen(true)}
+          type="button"
+        >
+          🎲 Rolagem de Dados
+        </button>
+        <InlineRollLog />
       </div>
 
       <div
@@ -572,6 +585,9 @@ export default function MapClient() {
           );
         })}
       </div>
+      
+      {/* Popup de Rolagem de Dados */}
+      <MapDiceRoller isOpen={isDiceRollerOpen} onClose={() => setIsDiceRollerOpen(false)} />
     </div>
   );
 }

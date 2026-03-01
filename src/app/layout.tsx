@@ -52,9 +52,6 @@ export default function RootLayout({
                 <Link className="hover:text-[var(--app-fg)]" href="/map">
                   Mapa
                 </Link>
-                <Link className="hover:text-[var(--app-fg)]" href="/rolls">
-                  Rolagens
-                </Link>
               </nav>
             </div>
           </header>
