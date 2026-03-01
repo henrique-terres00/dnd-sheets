@@ -56,10 +56,10 @@ export function getWeaponAbility(weapon: Weapon): Ability {
 export function createCustomWeapon(data: Partial<Weapon>): Weapon {
   return {
     id: crypto.randomUUID(),
-    name: data.name || "Arma Personalizada",
+    name: data.name || "Custom Weapon",
     type: data.type || "simpleMelee",
     damage: data.damage || "1d6",
-    damageType: data.damageType || "corte",
+    damageType: data.damageType || "slashing",
     ability: data.ability || "str",
     properties: data.properties || [],
     magicalBonus: data.magicalBonus || 0,
@@ -71,7 +71,7 @@ export function createCustomWeapon(data: Partial<Weapon>): Weapon {
 export function createCustomArmor(data: Partial<Armor>): Armor {
   return {
     id: crypto.randomUUID(),
-    name: data.name || "Armadura Personalizada",
+    name: data.name || "Custom Armor",
     type: data.type || "light",
     baseAC: data.baseAC || 10,
     dexBonus: data.dexBonus ?? true,

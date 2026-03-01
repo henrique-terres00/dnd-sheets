@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DEFAULT_WEAPONS, DEFAULT_ARMOR, DEFAULT_EQUIPMENT } from "@/lib/defaultEquipment";
 import { createCustomWeapon, createCustomArmor, createCustomEquipment } from "@/lib/equipmentUtils";
-import type { Weapon, Armor, Equipment } from "@/lib/equipment";
+import type { Weapon, Armor, Equipment, WeaponType, ArmorType, EquipmentType } from "@/lib/equipment";
 
 interface EquipmentManagerProps {
   isOpen: boolean;
@@ -52,10 +52,10 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
   });
 
   // Filter functions
-  const filterItems = (items: any[], searchField: string) => {
+  const filterItems = <T extends Record<string, any>>(items: T[], searchField: keyof T) => {
     if (!searchTerm) return items;
     return items.filter(item => 
-      item[searchField]?.toLowerCase().includes(searchTerm.toLowerCase())
+      item[searchField]?.toString().toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
@@ -176,7 +176,7 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
         <div className="min-h-[400px]">
           {activeTab === 'weapons' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredWeapons.map((weapon: Weapon) => {
+              {filteredWeapons.map((weapon) => {
                 const isAdded = addedItems.has(`weapon-${weapon.id}`);
                 return (
                   <div key={weapon.id} className={`p-3 border rounded-lg bg-[var(--app-bg)] transition-all duration-300 ${
@@ -207,7 +207,7 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
 
           {activeTab === 'armor' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredArmor.map((armor: Armor) => {
+              {filteredArmor.map((armor) => {
                 const isAdded = addedItems.has(`armor-${armor.id}`);
                 return (
                   <div key={armor.id} className={`p-3 border rounded-lg bg-[var(--app-bg)] transition-all duration-300 ${
@@ -238,7 +238,7 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
 
           {activeTab === 'equipment' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredEquipment.map((equipment: Equipment) => {
+              {filteredEquipment.map((equipment) => {
                 const isAdded = addedItems.has(`equipment-${equipment.id}`);
                 return (
                   <div key={equipment.id} className={`p-3 border rounded-lg bg-[var(--app-bg)] transition-all duration-300 ${
@@ -316,7 +316,7 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
                     <select
                       className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)]"
                       value={customWeapon.type}
-                      onChange={(e) => setCustomWeapon({...customWeapon, type: e.target.value as any})}
+                      onChange={(e) => setCustomWeapon({...customWeapon, type: e.target.value as typeof customWeapon.type})}
                     >
                       <option value="simpleMelee">Simples Corpo a Corpo</option>
                       <option value="simpleRanged">Simples à Distância</option>
@@ -389,7 +389,7 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
                     <select
                       className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)]"
                       value={customArmor.type}
-                      onChange={(e) => setCustomArmor({...customArmor, type: e.target.value as any})}
+                      onChange={(e) => setCustomArmor({...customArmor, type: e.target.value as typeof customArmor.type})}
                     >
                       <option value="light">Leve</option>
                       <option value="medium">Média</option>
@@ -455,7 +455,7 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
                     <select
                       className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)]"
                       value={customEquipment.type}
-                      onChange={(e) => setCustomEquipment({...customEquipment, type: e.target.value as any})}
+                      onChange={(e) => setCustomEquipment({...customEquipment, type: e.target.value as typeof customEquipment.type})}
                     >
                       <option value="misc">Diverso</option>
                       <option value="tool">Ferramenta</option>

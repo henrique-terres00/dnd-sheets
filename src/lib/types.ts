@@ -22,6 +22,8 @@ export type Skill =
 
 export type SavingThrow = Ability;
 
+import type { CharacterEquipment } from "./equipment";
+
 export type Character = {
   id: string;
   updatedAt: string;
@@ -83,10 +85,5 @@ export type Character = {
   treasure: string;
 
   // New equipment system
-  characterEquipment?: {
-    weapons: any[];
-    armor: any;
-    shield: any;
-    equipment: any[];
-  };
+  characterEquipment?: CharacterEquipment;
 };

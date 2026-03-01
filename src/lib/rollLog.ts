@@ -1,80 +1,58 @@
-// Sistema de log compartilhado de rolagens
+// Shared dice roll logging system
 
 import { useState, useEffect } from 'react';
 import { DiceRoll } from './dice';
+import { storage, limitArray, formatTime } from './utils';
+import { ROLL_LOG_LIMIT, STORAGE_KEYS } from './constants';
 
 export type { DiceRoll };
-
-const ROLL_LOG_KEY = 'dnd-sheets.roll-log.v1';
 
 export interface RollLogState {
   rolls: DiceRoll[];
   lastUpdated: Date;
 }
 
-// Carregar log do localStorage
+// Load log from localStorage
 export function loadRollLog(): RollLogState {
-  if (typeof window === 'undefined') {
-    return { rolls: [], lastUpdated: new Date() };
-  }
-
-  try {
-    const stored = localStorage.getItem(ROLL_LOG_KEY);
-    if (!stored) return { rolls: [], lastUpdated: new Date() };
-
-    const parsed = JSON.parse(stored);
-    return {
-      rolls: parsed.rolls || [],
-      lastUpdated: new Date(parsed.lastUpdated || Date.now())
-    };
-  } catch {
-    return { rolls: [], lastUpdated: new Date() };
-  }
+  const stored = storage.get(STORAGE_KEYS.ROLL_LOG, { rolls: [], lastUpdated: new Date().toISOString() });
+  return {
+    rolls: stored.rolls || [],
+    lastUpdated: new Date(stored.lastUpdated || Date.now())
+  };
 }
 
-// Salvar log no localStorage
+// Save log to localStorage
 export function saveRollLog(state: RollLogState) {
-  if (typeof window === 'undefined') return;
-
-  try {
-    localStorage.setItem(ROLL_LOG_KEY, JSON.stringify({
-      rolls: state.rolls,
-      lastUpdated: state.lastUpdated.toISOString()
-    }));
-  } catch {
-    // Ignorar erros de localStorage
-  }
+  storage.set(STORAGE_KEYS.ROLL_LOG, {
+    rolls: state.rolls,
+    lastUpdated: state.lastUpdated.toISOString()
+  });
 }
 
-// Adicionar nova rolagem ao log
+// Add new roll to log
 export function addRollToLog(roll: DiceRoll) {
   const log = loadRollLog();
-  log.rolls.unshift(roll); // Adicionar no início (mais recente primeiro)
+  log.rolls.unshift(roll); // Add to beginning (most recent first)
   
-  // Manter apenas as 100 rolagens mais recentes
-  if (log.rolls.length > 100) {
-    log.rolls = log.rolls.slice(0, 100);
-  }
+  // Keep only the most recent rolls
+  log.rolls = limitArray(log.rolls, ROLL_LOG_LIMIT);
   
   log.lastUpdated = new Date();
   saveRollLog(log);
   
-  // Disparar evento para notificar outros componentes
+  // Trigger event to notify other components
   window.dispatchEvent(new CustomEvent('rollAdded', { detail: roll }));
 }
 
-// Limpar log
+// Clear roll log
 export function clearRollLog() {
   saveRollLog({ rolls: [], lastUpdated: new Date() });
   window.dispatchEvent(new CustomEvent('rollLogCleared'));
 }
 
-// Formatar mensagem para exibição
+// Format message for display
 export function formatRollMessage(roll: DiceRoll): string {
-  const time = new Date(roll.timestamp).toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const time = formatTime(roll.timestamp);
   
   let typeIcon = '';
   switch (roll.type) {
@@ -91,7 +69,7 @@ export function formatRollMessage(roll: DiceRoll): string {
   return `${time} ${typeIcon} ${roll.playerName} [${roll.label.toUpperCase()}] ${roll.details} = ${roll.result}${criticalIcon}`;
 }
 
-// Hook React para usar o log de rolagens
+// React hook to use roll log
 export function useRollLog() {
   const [log, setLog] = useState<RollLogState>(() => loadRollLog());
 
@@ -100,7 +78,7 @@ export function useRollLog() {
       setLog((prev: RollLogState) => {
         const newLog = {
           ...prev,
-          rolls: [event.detail, ...prev.rolls].slice(0, 100),
+          rolls: limitArray([event.detail, ...prev.rolls], ROLL_LOG_LIMIT),
           lastUpdated: new Date()
         };
         return newLog;

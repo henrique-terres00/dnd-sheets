@@ -1,4 +1,4 @@
-// Sistema de rolagem de dados D&D 5e
+// D&D 5e dice rolling system
 
 export interface DiceRoll {
   id: string;
@@ -23,7 +23,7 @@ export interface RollResult {
   critical?: 'success' | 'failure';
 }
 
-// Função principal de rolagem de dados
+// Main dice rolling function
 export function rollDice(formula: string, modifier: number = 0): RollResult {
   const diceRegex = /(\d+)d(\d+)/g;
   const rolls: number[] = [];
@@ -34,7 +34,7 @@ export function rollDice(formula: string, modifier: number = 0): RollResult {
   // Reset regex state
   diceRegex.lastIndex = 0;
 
-  // Processar cada dado na fórmula
+  // Process each dice in the formula
   let match;
   while ((match = diceRegex.exec(formula)) !== null) {
     const [countStr, sidesStr] = match;
@@ -50,12 +50,12 @@ export function rollDice(formula: string, modifier: number = 0): RollResult {
     
     rolls.push(...diceRolls);
     
-    // Adicionar detalhes da rolagem
+    // Add roll details
     if (details) details += ' + ';
     details += `${count}d${sides}[${diceRolls.join(', ')}]`;
   }
 
-  // Adicionar modificador aos detalhes
+  // Add modifier details
   if (modifier !== 0) {
     details += ` + ${modifier}`;
     formulaDisplay += modifier > 0 ? `+${modifier}` : `${modifier}`;
@@ -72,12 +72,12 @@ export function rollDice(formula: string, modifier: number = 0): RollResult {
   };
 }
 
-// Função alternativa que não usa regex para evitar problemas de estado
+// Alternative function that doesn't use regex to avoid state issues
 export function rollDiceSimple(formula: string, modifier: number = 0): RollResult {
-  // Parse manual da fórmula de dado (ex: "1d4", "2d6")
+  // Manual parsing of dice formula (e.g., "1d4", "2d6")
   const parts = formula.split('d');
   if (parts.length !== 2) {
-    // Se não for uma fórmula de dado válida, retorna só o modificador
+    // If not a valid dice formula, return just the modifier
     return {
       total: modifier,
       rolls: [],
@@ -111,7 +111,7 @@ export function rollDiceSimple(formula: string, modifier: number = 0): RollResul
   };
 }
 
-// Rolagem de d20 com vantagem/desvantagem
+// d20 roll with advantage/disadvantage
 export function rollD20(advantage: 'none' | 'advantage' | 'disadvantage' = 'none'): RollResult {
   if (advantage === 'none') {
     // Use direct roll instead of rollDice to avoid regex issues
@@ -148,7 +148,7 @@ export function rollD20(advantage: 'none' | 'advantage' | 'disadvantage' = 'none
   };
 }
 
-// Rolagem de ataque
+// Attack roll
 export function rollAttack(
   proficiencyBonus: number,
   abilityMod: number,
@@ -167,7 +167,7 @@ export function rollAttack(
   };
 }
 
-// Rolagem de perícia ou teste de habilidade
+// Skill check or ability test roll
 export function rollSkillCheck(
   abilityMod: number,
   proficiencyBonus: number = 0,
@@ -187,7 +187,7 @@ export function rollSkillCheck(
   };
 }
 
-// Rolagem de dano
+// Damage roll
 export function rollDamage(dice: string, abilityMod: number = 0, critical: boolean = false): RollResult {
   const baseRoll = rollDiceSimple(dice, abilityMod);
   const criticalDice = critical ? rollDiceSimple(dice, 0) : { total: 0, rolls: [], modifier: 0, formula: '', details: '' };
@@ -209,7 +209,7 @@ export function rollDamage(dice: string, abilityMod: number = 0, critical: boole
   };
 }
 
-// Iniciativa
+// Initiative roll
 export function rollInitiative(abilityMod: number): RollResult {
   const d20Roll = rollD20();
   

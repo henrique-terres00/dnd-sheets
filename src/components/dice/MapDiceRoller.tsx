@@ -12,6 +12,7 @@ import {
 } from "@/lib/dice";
 import { addRollToLog, type DiceRoll } from "@/lib/rollLog";
 import { calculateArmorClass } from "@/lib/equipmentUtils";
+import type { Character } from "@/lib/types";
 
 interface MapDiceRollerProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
   const [magicBonus, setMagicBonus] = useState<number>(0);
   const [advantage, setAdvantage] = useState<'none' | 'advantage' | 'disadvantage'>('none');
   const [lastRoll, setLastRoll] = useState<RollResult | null>(null);
-  const [characters, setCharacters] = useState<any[]>([]);
+  const [characters, setCharacters] = useState<Character[]>([]);
 
   // Load available characters on mount
   useEffect(() => {
@@ -39,6 +40,7 @@ export function MapDiceRoller({ isOpen, onClose }: MapDiceRollerProps) {
     } catch (error) {
       console.error('Failed to load characters:', error);
       setCharacters([]);
+      // Could add user notification here in the future
     }
   }, []);
 

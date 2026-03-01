@@ -123,8 +123,9 @@ function safeParse(raw: string | null): Stored {
     const parsed = JSON.parse(raw) as Stored;
     if (!parsed || typeof parsed !== "object") return { characters: [] };
     if (!Array.isArray(parsed.characters)) return { characters: [] };
-    return { characters: parsed.characters };
-  } catch {
+    return parsed;
+  } catch (error) {
+    console.error('Failed to parse character store:', error);
     return { characters: [] };
   }
 }
@@ -140,14 +141,24 @@ export function getCharacter(id: string): Character | null {
 }
 
 export function upsertCharacter(character: Character) {
-  const stored = safeParse(window.localStorage.getItem(STORAGE_KEY));
-  const next = stored.characters.filter((c) => c.id !== character.id);
-  next.push({ ...character, updatedAt: new Date().toISOString() });
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ characters: next } satisfies Stored));
+  try {
+    const stored = safeParse(window.localStorage.getItem(STORAGE_KEY));
+    const next = stored.characters.filter((c) => c.id !== character.id);
+    next.push({ ...character, updatedAt: new Date().toISOString() });
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ characters: next } satisfies Stored));
+  } catch (error) {
+    console.error('Failed to save character:', error);
+    throw new Error('Could not save character to storage');
+  }
 }
 
 export function deleteCharacter(id: string) {
-  const stored = safeParse(window.localStorage.getItem(STORAGE_KEY));
-  const next = stored.characters.filter((c) => c.id !== id);
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ characters: next } satisfies Stored));
+  try {
+    const stored = safeParse(window.localStorage.getItem(STORAGE_KEY));
+    const next = stored.characters.filter((c) => c.id !== id);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ characters: next } satisfies Stored));
+  } catch (error) {
+    console.error('Failed to delete character:', error);
+    throw new Error('Could not delete character from storage');
+  }
 }
