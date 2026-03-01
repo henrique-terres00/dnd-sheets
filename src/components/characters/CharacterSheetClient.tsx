@@ -7,6 +7,7 @@ import { abilityMod, formatSigned, proficiencyBonusFromLevel, SKILL_TO_ABILITY }
 import { getCharacter, upsertCharacter } from "@/lib/characterStore";
 import { getSrdClass, getSrdRace, SRD_CLASSES, SRD_RACES } from "@/lib/srd";
 import type { Ability, Character, Skill } from "@/lib/types";
+import { DiceRoller } from "@/components/dice/DiceRoller";
 
 const ABILITIES: { key: Ability; label: string }[] = [
   { key: "str", label: "Força" },
@@ -907,10 +908,15 @@ export default function CharacterSheetClient({ id }: { id: string }) {
           </div>
 
           <div className={boxClass()}>
-            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            <div className="text-xs text-[var(--app-muted)]">
               Dica: nesta fase, a ficha salva no seu navegador. Depois vamos migrar para banco de dados e storage.
             </div>
           </div>
+        </div>
+
+        {/* Sistema de Rolagem de Dados */}
+        <div className="grid grid-cols-1 gap-6">
+          <DiceRoller character={character} playerName={character.name || "Personagem sem nome"} />
         </div>
       </div>
     </div>
