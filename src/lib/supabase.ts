@@ -1,13 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Debug logging
-console.log('Supabase URL:', supabaseUrl);
-console.log('Supabase Key exists:', !!supabaseAnonKey);
+// Validate environment variables
+if (!supabaseUrl) {
+  console.error('NEXT_PUBLIC_SUPABASE_URL is not set');
+}
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseAnonKey) {
+  console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
+}
+
+// Only create client if environment variables are available
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // Types for our database
 export interface Session {
@@ -43,6 +51,10 @@ export interface SessionRoll {
 
 // Database functions
 export async function createSession(code: string) {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  
   try {
     console.log('Creating session with code:', code);
     const { data, error } = await supabase
@@ -70,6 +82,10 @@ export async function createSession(code: string) {
 }
 
 export async function getSession(code: string) {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  
   try {
     console.log('Getting session with code:', code);
     const { data, error } = await supabase
@@ -78,10 +94,17 @@ export async function getSession(code: string) {
       .eq('code', code.toUpperCase())
       .single();
 
-    if (error && error.code !== 'PGRST116') {
+    // PGRST116 means no rows found - session doesn't exist
+    if (error && error.code === 'PGRST116') {
+      console.log('Session not found (PGRST116):', code);
+      return null; // Return null for non-existent session
+    }
+
+    if (error) {
       console.error('Error getting session:', error);
       throw error;
     }
+    
     console.log('Session retrieved:', data);
     return data;
   } catch (err) {
@@ -91,6 +114,10 @@ export async function getSession(code: string) {
 }
 
 export async function updateSession(code: string, updates: Partial<Session>) {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  
   const { data, error } = await supabase
     .from('sessions')
     .update({
@@ -106,6 +133,10 @@ export async function updateSession(code: string, updates: Partial<Session>) {
 }
 
 export async function deleteSession(code: string) {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  
   try {
     console.log('Deleting session:', code);
     const { data, error } = await supabase
@@ -135,6 +166,10 @@ export async function deleteSession(code: string) {
 }
 
 export async function addCharacterToSession(code: string, character: any, playerName: string) {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  
   const session = await getSession(code);
   if (!session) throw new Error('Session not found');
 
@@ -147,6 +182,10 @@ export async function addCharacterToSession(code: string, character: any, player
 }
 
 export async function addRollToSession(code: string, roll: any) {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  
   const session = await getSession(code);
   if (!session) throw new Error('Session not found');
 
@@ -159,16 +198,20 @@ export async function addRollToSession(code: string, roll: any) {
 
 // Real-time subscription
 export function subscribeToSession(code: string, callback: (payload: any) => void) {
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    return { unsubscribe: () => {} };
+  }
+  
   return supabase
-    .channel(`session_${code}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'sessions',
-        filter: `code=eq.${code.toUpperCase()}`
-      },
+    .channel(`session-${code}`)
+    .on('postgres_changes', 
+      { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'sessions', 
+        filter: `code=eq.${code}` 
+      }, 
       callback
     )
     .subscribe();
