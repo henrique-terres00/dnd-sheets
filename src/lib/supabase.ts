@@ -1,0 +1,175 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+// Debug logging
+console.log('Supabase URL:', supabaseUrl);
+console.log('Supabase Key exists:', !!supabaseAnonKey);
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Types for our database
+export interface Session {
+  id: string;
+  code: string;
+  created_at: string;
+  updated_at: string;
+  characters: any[];
+  rolls: any[];
+  map_state: any;
+  active_players: number;
+}
+
+export interface SessionCharacter {
+  id: string;
+  session_id: string;
+  character_data: any;
+  player_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SessionRoll {
+  id: string;
+  session_id: string;
+  player_name: string;
+  character_name: string;
+  roll_type: string;
+  roll_details: string;
+  roll_result: number;
+  created_at: string;
+}
+
+// Database functions
+export async function createSession(code: string) {
+  try {
+    console.log('Creating session with code:', code);
+    const { data, error } = await supabase
+      .from('sessions')
+      .insert({
+        code: code.toUpperCase(),
+        characters: [],
+        rolls: [],
+        map_state: {},
+        active_players: 0
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating session:', error);
+      throw error;
+    }
+    console.log('Session created successfully:', data);
+    return data;
+  } catch (err) {
+    console.error('Failed to create session:', err);
+    throw err;
+  }
+}
+
+export async function getSession(code: string) {
+  try {
+    console.log('Getting session with code:', code);
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('code', code.toUpperCase())
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error getting session:', error);
+      throw error;
+    }
+    console.log('Session retrieved:', data);
+    return data;
+  } catch (err) {
+    console.error('Failed to get session:', err);
+    throw err;
+  }
+}
+
+export async function updateSession(code: string, updates: Partial<Session>) {
+  const { data, error } = await supabase
+    .from('sessions')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .eq('code', code.toUpperCase())
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteSession(code: string) {
+  try {
+    console.log('Deleting session:', code);
+    const { data, error } = await supabase
+      .from('sessions')
+      .delete()
+      .eq('code', code.toUpperCase())
+      .select(); // Add .select() to return deleted data
+
+    if (error) {
+      console.error('Error deleting session:', error);
+      throw error;
+    }
+    
+    console.log('Session deleted successfully:', data);
+    
+    // Check if anything was actually deleted
+    if (!data || data.length === 0) {
+      console.log('No session found to delete with code:', code);
+      return null; // No session was deleted
+    }
+    
+    return data[0]; // Return the deleted session
+  } catch (err) {
+    console.error('Failed to delete session:', err);
+    throw err;
+  }
+}
+
+export async function addCharacterToSession(code: string, character: any, playerName: string) {
+  const session = await getSession(code);
+  if (!session) throw new Error('Session not found');
+
+  const updatedCharacters = [...(session.characters || []), character];
+  
+  return await updateSession(code, {
+    characters: updatedCharacters,
+    active_players: session.active_players + 1
+  });
+}
+
+export async function addRollToSession(code: string, roll: any) {
+  const session = await getSession(code);
+  if (!session) throw new Error('Session not found');
+
+  const updatedRolls = [...(session.rolls || []), roll];
+  
+  return await updateSession(code, {
+    rolls: updatedRolls
+  });
+}
+
+// Real-time subscription
+export function subscribeToSession(code: string, callback: (payload: any) => void) {
+  return supabase
+    .channel(`session_${code}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'sessions',
+        filter: `code=eq.${code.toUpperCase()}`
+      },
+      callback
+    )
+    .subscribe();
+}

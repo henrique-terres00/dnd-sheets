@@ -3,6 +3,7 @@ import { Cinzel, IM_Fell_English, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import Image from "next/image";
 import "./globals.css";
+import SessionState from "./components/SessionState";
 
 const medievalDisplay = Cinzel({
   variable: "--font-medieval-display",
@@ -31,11 +32,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className="dark">
       <body
-        className={`${medievalDisplay.variable} ${medievalBody.variable} ${geistMono.variable} antialiased`}
+        className={`${medievalDisplay.variable} ${medievalBody.variable} ${geistMono.variable} antialiased min-h-screen bg-[var(--app-bg)] text-[var(--app-fg)]`}
       >
-        <div className="min-h-dvh bg-[var(--app-bg)] text-[var(--app-fg)]">
+        <div className="min-h-screen flex flex-col">
           <header className="border-b border-[var(--app-border)] bg-[var(--app-surface)]/90 backdrop-blur">
             <div className="mx-auto flex w-full max-w-6xl items-center justify-center px-4 py-3">
               <Link href="/" className="flex items-center gap-3 font-[var(--font-medieval-display)] text-lg font-semibold tracking-wide">
@@ -55,6 +56,7 @@ export default function RootLayout({
                 <Link className="hover:text-[var(--app-fg)]" href="/map">
                   Mapa
                 </Link>
+                <SessionState />
               </nav>
             </div>
           </header>

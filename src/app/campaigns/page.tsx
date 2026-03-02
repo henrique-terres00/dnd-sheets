@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { createSession } from "@/lib/supabase";
 
 export default function CampaignsPage() {
   const [sessionCode, setSessionCode] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleJoinSession = () => {
     if (sessionCode.trim()) {
@@ -12,10 +14,24 @@ export default function CampaignsPage() {
     }
   };
 
-  const handleCreateSession = () => {
-    // Generate random session code
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    window.location.href = `/session/${code}`;
+  const handleCreateSession = async () => {
+    try {
+      setIsCreating(true);
+      
+      // Generate random session code
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // Create session in Supabase first
+      await createSession(code);
+      
+      // Navigate to the created session
+      window.location.href = `/session/${code}`;
+    } catch (err) {
+      console.error('Error creating session:', err);
+      alert('Erro ao criar sessão. Tente novamente.');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -56,9 +72,10 @@ export default function CampaignsPage() {
           </p>
           <button
             onClick={handleCreateSession}
-            className="w-full px-4 py-2 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+            disabled={isCreating}
+            className="w-full px-4 py-2 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Create Session
+            {isCreating ? 'Criando...' : 'Create Session'}
           </button>
         </div>
       </div>

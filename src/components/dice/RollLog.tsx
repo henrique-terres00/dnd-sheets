@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useRollLog } from "@/lib/rollLog";
+import { useSearchParams } from "next/navigation";
 
-export function RollLog() {
+function RollLogContent() {
   const { rolls, clearLog, formatMessage } = useRollLog();
   const logEndRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+  const sessionCode = searchParams.get('session');
 
   // Auto-scroll to end when new rolls are added
   useEffect(() => {
@@ -15,7 +18,9 @@ export function RollLog() {
   return (
     <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">📜 Log de Rolagens</h3>
+        <h3 className="text-lg font-semibold">
+          📜 {sessionCode ? `Rolagens da Sessão ${sessionCode}` : 'Log de Rolagens'}
+        </h3>
         <button
           className="rounded-lg border border-[var(--app-border)] bg-red-500/20 px-3 py-1 text-sm text-[var(--app-fg)] hover:bg-red-500/30"
           onClick={clearLog}
@@ -28,7 +33,7 @@ export function RollLog() {
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {rolls.length === 0 ? (
           <div className="text-center text-sm text-[var(--app-muted)] py-8">
-            Nenhuma rolagem registrada ainda
+            {sessionCode ? 'Nenhuma rolagem nesta sessão ainda' : 'Nenhuma rolagem registrada ainda'}
           </div>
         ) : (
           rolls.map((roll) => (
@@ -50,5 +55,19 @@ export function RollLog() {
         </div>
       )}
     </div>
+  );
+}
+
+export function RollLog() {
+  return (
+    <Suspense fallback={
+      <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm">
+        <div className="text-center text-sm text-[var(--app-muted)] py-8">
+          Carregando...
+        </div>
+      </div>
+    }>
+      <RollLogContent />
+    </Suspense>
   );
 }
