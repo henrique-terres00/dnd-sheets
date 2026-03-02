@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import CharacterSheetClient from "./characters/CharacterSheetClient";
 import { getSession, updateSession, subscribeToSession } from "@/lib/supabase";
 import type { Character } from "@/lib/types";
+
+// Import CharacterSheet components directly to avoid function override issues
+import CharacterSheetContent from "./characters/CharacterSheetContent";
 
 export default function SessionCharacterSheet({ id }: { id: string }) {
   const [character, setCharacter] = useState<Character | null>(null);
@@ -47,53 +49,27 @@ export default function SessionCharacterSheet({ id }: { id: string }) {
     }
   }, [id]);
 
-  // Override the getCharacter and upsertCharacter functions
-  useEffect(() => {
-    if (!character) return;
-
-    const characterStore = require('@/lib/characterStore');
-    const originalGetCharacter = characterStore.getCharacter;
-    const originalUpsertCharacter = characterStore.upsertCharacter;
-
-    // Override getCharacter to return session character
-    characterStore.getCharacter = (charId: string) => {
-      if (charId === id) return character;
-      return originalGetCharacter(charId);
-    };
-
-    // Override upsertCharacter to sync with session
-    characterStore.upsertCharacter = async (updatedCharacter: Character) => {
-      if (updatedCharacter.id === id) {
-        try {
-          const currentSession = localStorage.getItem('currentSession');
-          if (currentSession) {
-            const sessionData = await getSession(currentSession);
-            if (sessionData && sessionData.characters) {
-              const updatedCharacters = sessionData.characters.map((c: Character) => 
-                c.id === id ? updatedCharacter : c
-              );
-              
-              await updateSession(currentSession, {
-                characters: updatedCharacters
-              });
-              
-              setCharacter(updatedCharacter);
-            }
-          }
-        } catch (error) {
-          console.error('Error updating session character:', error);
+  const updateCharacter = async (updatedCharacter: Character) => {
+    try {
+      const currentSession = localStorage.getItem('currentSession');
+      if (currentSession) {
+        const sessionData = await getSession(currentSession);
+        if (sessionData && sessionData.characters) {
+          const updatedCharacters = sessionData.characters.map((c: Character) => 
+            c.id === id ? updatedCharacter : c
+          );
+          
+          await updateSession(currentSession, {
+            characters: updatedCharacters
+          });
+          
+          setCharacter(updatedCharacter);
         }
-      } else {
-        return originalUpsertCharacter(updatedCharacter);
       }
-    };
-
-    return () => {
-      // Restore original functions
-      characterStore.getCharacter = originalGetCharacter;
-      characterStore.upsertCharacter = originalUpsertCharacter;
-    };
-  }, [character, id]);
+    } catch (error) {
+      console.error('Error updating session character:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -119,5 +95,5 @@ export default function SessionCharacterSheet({ id }: { id: string }) {
     );
   }
 
-  return <CharacterSheetClient id={id} />;
+  return <CharacterSheetContent character={character} onUpdate={updateCharacter} />;
 }
