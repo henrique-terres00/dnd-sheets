@@ -34,6 +34,9 @@ type MapBackground =
 
 type MapState = {
   gridSize: number;
+  scale: number;
+  offsetX: number;
+  offsetY: number;
   background: MapBackground;
   tokens: Token[];
 };
@@ -60,16 +63,16 @@ function clamp(value: number, min: number, max: number) {
 
 function loadState(): MapState {
   if (typeof window === "undefined") {
-    return { gridSize: 50, background: { kind: "none" }, tokens: [] };
+    return { gridSize: 50, scale: 1, offsetX: 0, offsetY: 0, background: { kind: "none" }, tokens: [] };
   }
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { gridSize: 50, background: { kind: "none" }, tokens: [] };
+    if (!raw) return { gridSize: 50, scale: 1, offsetX: 0, offsetY: 0, background: { kind: "none" }, tokens: [] };
     const parsed = JSON.parse(raw) as MapState;
 
-    if (!parsed || typeof parsed !== "object") return { gridSize: 50, background: { kind: "none" }, tokens: [] };
-    if (!Array.isArray(parsed.tokens)) return { gridSize: 50, background: { kind: "none" }, tokens: [] };
+    if (!parsed || typeof parsed !== "object") return { gridSize: 50, scale: 1, offsetX: 0, offsetY: 0, background: { kind: "none" }, tokens: [] };
+    if (!Array.isArray(parsed.tokens)) return { gridSize: 50, scale: 1, offsetX: 0, offsetY: 0, background: { kind: "none" }, tokens: [] };
 
     const bg = (parsed as unknown as { background?: unknown }).background;
     let background: MapBackground = { kind: "none" };
@@ -88,7 +91,10 @@ function loadState(): MapState {
     }
 
     return {
-      gridSize: 50,
+      gridSize: parsed.gridSize || 50,
+      scale: parsed.scale || 1,
+      offsetX: parsed.offsetX || 0,
+      offsetY: parsed.offsetY || 0,
       background,
       tokens: parsed.tokens
         .filter((t) => t && typeof t === "object")
@@ -97,7 +103,7 @@ function loadState(): MapState {
           kind: (t as Token).kind,
           characterId: (t as Token).characterId ? String((t as Token).characterId) : undefined,
           enemyId: (t as Token).enemyId ? String((t as Token).enemyId) : undefined,
-          imageSrc: (t as Token).imageSrc ? String((t as Token).imageSrc) : undefined,
+          imageSrc: typeof (t as Token).imageSrc === "string" ? (t as Token).imageSrc : "",
           x: Number((t as Token).x) || 0,
           y: Number((t as Token).y) || 0,
         }))
@@ -106,15 +112,15 @@ function loadState(): MapState {
             t.kind === "dragon" ||
             t.kind === "goblin" ||
             t.kind === "skeleton" ||
+            t.kind === "orc" ||
             t.kind === "elf" ||
             t.kind === "dwarf" ||
-            t.kind === "orc" ||
             t.kind === "character" ||
             t.kind === "enemy",
         ),
     };
   } catch {
-    return { gridSize: 50, background: { kind: "none" }, tokens: [] };
+    return { gridSize: 50, scale: 1, offsetX: 0, offsetY: 0, background: { kind: "none" }, tokens: [] };
   }
 }
 
@@ -196,6 +202,12 @@ export default function MapClient() {
 
   const initial = useMemo(() => loadState(), []);
   const [gridSize, setGridSize] = useState(50);
+  const [scale, setScale] = useState(1);
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const animationFrameRef = useRef<number>(0);
   const [tokens, setTokens] = useState<Token[]>(initial.tokens);
   const [background, setBackground] = useState<MapBackground>(initial.background);
   const [characters, setCharacters] = useState<Character[]>(() => (typeof window === "undefined" ? [] : listCharacters()));
@@ -216,8 +228,8 @@ export default function MapClient() {
   } | null>(null);
 
   useEffect(() => {
-    saveState({ gridSize, background, tokens });
-  }, [gridSize, background, tokens]);
+    saveState({ gridSize, scale, offsetX, offsetY, background, tokens });
+  }, [gridSize, scale, offsetX, offsetY, background, tokens]);
 
   useEffect(() => {
     setCharacters(listCharacters());
@@ -226,6 +238,15 @@ export default function MapClient() {
   useEffect(() => {
     saveEnemies(enemies);
   }, [enemies]);
+
+  // Cleanup animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current !== 0) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   const addCharacterToken = () => {
     if (!selectedCharacterId) return;
@@ -324,17 +345,35 @@ export default function MapClient() {
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
+    if (isPanning) {
+      const deltaX = e.clientX - panStart.x;
+      const deltaY = e.clientY - panStart.y;
+      
+      // Cancel previous animation frame
+      if (animationFrameRef.current !== 0) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      
+      // Use requestAnimationFrame for smoother panning
+      animationFrameRef.current = requestAnimationFrame(() => {
+        setOffsetX(prev => prev + deltaX);
+        setOffsetY(prev => prev + deltaY);
+        setPanStart({ x: e.clientX, y: e.clientY });
+      });
+      return;
+    }
+    
     if (!dragging) return;
     const container = containerRef.current;
     if (!container) return;
 
     const containerRect = container.getBoundingClientRect();
 
-    const rawX = e.clientX - containerRect.left - dragging.pointerOffsetX;
-    const rawY = e.clientY - containerRect.top - dragging.pointerOffsetY;
+    const rawX = (e.clientX - containerRect.left - offsetX - dragging.pointerOffsetX) / scale;
+    const rawY = (e.clientY - containerRect.top - offsetY - dragging.pointerOffsetY) / scale;
 
-    const maxX = containerRect.width - 40;
-    const maxY = containerRect.height - 40;
+    const maxX = (containerRect.width / scale) - 40;
+    const maxY = (containerRect.height / scale) - 40;
 
     const x = snap(clamp(rawX, 0, maxX), gridSize);
     const y = snap(clamp(rawY, 0, maxY), gridSize);
@@ -344,6 +383,42 @@ export default function MapClient() {
 
   const onPointerUp = () => {
     setDragging(null);
+    setIsPanning(false);
+  };
+
+  // Add wheel event listener with passive: false to allow preventDefault
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const wheelHandler = (e: WheelEvent) => {
+      if (e.shiftKey || e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        setScale(prev => clamp(prev * delta, 0.5, 3));
+      }
+    };
+
+    container.addEventListener('wheel', wheelHandler, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', wheelHandler);
+    };
+  }, []);
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    // Disable context menu when panning
+    if (isPanning) {
+      e.preventDefault();
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.shiftKey && e.button === 0) { // Left click + Shift
+      e.preventDefault();
+      setIsPanning(true);
+      setPanStart({ x: e.clientX, y: e.clientY });
+    }
   };
 
   return (
@@ -512,7 +587,7 @@ export default function MapClient() {
         </div>
       </div>
 
-      {/* Seção de Rolagem de Dados */}
+      {/* Dice Roller */}
       <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
         <button
           className="rounded-xl border border-[var(--app-border)] bg-purple-500/20 px-4 py-3 text-sm font-medium text-[var(--app-fg)] hover:bg-purple-500/30"
@@ -524,22 +599,56 @@ export default function MapClient() {
         <InlineRollLog />
       </div>
 
-      <div
-        ref={containerRef}
-        className="relative h-[70vh] w-full overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-bg)] shadow-sm"
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        style={{
-          backgroundImage: backgroundCss
-            ? `url(${backgroundCss}), linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`
-            : `linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`,
-          backgroundSize: backgroundCss
-            ? `cover, ${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px`
-            : `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px`,
-          backgroundPosition: backgroundCss ? "center, 0 0, 0 0" : "0 0, 0 0",
-          backgroundRepeat: backgroundCss ? "no-repeat, repeat, repeat" : "repeat, repeat",
-        }}
-      >
+      <div className="relative">
+        {/* Zoom Controls - Fixed to map container */}
+        <div className="absolute top-4 right-4 flex flex-col gap-2 z-50">
+          <button
+            className="w-10 h-10 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)] flex items-center justify-center text-sm font-medium shadow-sm"
+            onClick={() => setScale(prev => clamp(prev * 1.2, 0.5, 3))}
+            title="Zoom In (Ctrl + Scroll ou Shift + Scroll)"
+          >
+            +
+          </button>
+          <button
+            className="w-10 h-10 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)] flex items-center justify-center text-sm font-medium shadow-sm"
+            onClick={() => setScale(prev => clamp(prev * 0.8, 0.5, 3))}
+            title="Zoom Out (Ctrl + Scroll ou Shift + Scroll)"
+          >
+            −
+          </button>
+          <button
+            className="w-10 h-10 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)] flex items-center justify-center text-xs font-medium shadow-sm"
+            onClick={() => {
+              setScale(1);
+              setOffsetX(0);
+              setOffsetY(0);
+            }}
+            title="Reset View (Voltar ao padrão)"
+          >
+            ⟲
+          </button>
+        </div>
+
+        <div
+          ref={containerRef}
+          className="relative h-[70vh] w-full overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-bg)] shadow-sm"
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onContextMenu={handleContextMenu}
+          onMouseDown={handleMouseDown}
+          style={{
+            transform: `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`,
+            transformOrigin: '0 0',
+            backgroundImage: backgroundCss
+              ? `url(${backgroundCss}), linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`
+              : `linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`,
+            backgroundSize: backgroundCss
+              ? `cover, ${gridSize * scale}px ${gridSize * scale}px, ${gridSize * scale}px ${gridSize * scale}px`
+              : `${gridSize * scale}px ${gridSize * scale}px, ${gridSize * scale}px ${gridSize * scale}px`,
+            backgroundPosition: backgroundCss ? "center, 0 0, 0 0" : "0 0, 0 0",
+            backgroundRepeat: backgroundCss ? "no-repeat, repeat, repeat" : "repeat, repeat",
+          }}
+        >
         {tokens.map((t) => {
           const isCharacter = t.kind === "character";
           const tokenSize = isCharacter ? "h-20 w-20" : "h-24 w-24";
@@ -549,7 +658,11 @@ export default function MapClient() {
             <div
               key={t.id}
               className={`absolute ${tokenSize} touch-none select-none`}
-              style={{ left: t.x, top: t.y }}
+              style={{ 
+                left: t.x * scale, 
+                top: t.y * scale,
+                transform: `scale(${scale})`
+              }}
               onPointerDown={(e) => onPointerDownToken(e, t)}
               onContextMenu={(e) => {
                 e.preventDefault();
@@ -584,6 +697,7 @@ export default function MapClient() {
             </div>
           );
         })}
+      </div>
       </div>
       
       {/* Popup de Rolagem de Dados */}
