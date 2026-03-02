@@ -258,7 +258,7 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
                           const isAdded = addedItems.has(`weapon-${weapon.id}`);
                           return (
                             <div key={weapon.id} className={`p-3 border rounded-lg bg-[var(--app-bg)] transition-all duration-300 ${
-                              isAdded ? 'border-green-500 bg-green-500/10' : 'border-[var(--app-border)]'
+                              isAdded ? 'border-emerald-600 bg-emerald-600/10' : 'border-[var(--app-border)]'
                             }`}>
                               <h4 className="font-medium text-[var(--app-fg)] mb-1">{weapon.name}</h4>
                               <p className="text-xs text-[var(--app-muted)] mb-2">
@@ -270,7 +270,7 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
                               <button
                                 className={`w-full rounded-lg border px-3 py-1 text-sm transition-all duration-300 ${
                                   isAdded 
-                                    ? 'border-green-500 bg-green-500 text-white' 
+                                    ? 'border-emerald-600 bg-emerald-600 text-white' 
                                     : 'border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)]'
                                 }`}
                                 onClick={() => handleAddWeapon(weapon)}
@@ -314,7 +314,7 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
                           const isAdded = addedItems.has(`armor-${armor.id}`);
                           return (
                             <div key={armor.id} className={`p-3 border rounded-lg bg-[var(--app-bg)] transition-all duration-300 ${
-                              isAdded ? 'border-green-500 bg-green-500/10' : 'border-[var(--app-border)]'
+                              isAdded ? 'border-emerald-600 bg-emerald-600/10' : 'border-[var(--app-border)]'
                             }`}>
                               <h4 className="font-medium text-[var(--app-fg)] mb-1">{armor.name}</h4>
                               <p className="text-xs text-[var(--app-muted)] mb-2">
@@ -328,7 +328,7 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
                               <button
                                 className={`w-full rounded-lg border px-3 py-1 text-sm transition-all duration-300 ${
                                   isAdded 
-                                    ? 'border-green-500 bg-green-500 text-white' 
+                                    ? 'border-emerald-600 bg-emerald-600 text-white' 
                                     : 'border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)]'
                                 }`}
                                 onClick={() => handleAddArmor(armor)}

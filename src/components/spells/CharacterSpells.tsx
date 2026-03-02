@@ -292,7 +292,7 @@ export function CharacterSpells({ character, onUpdate }: CharacterSpellsProps) {
                       onClick={() => toggleSpellPrepared(spell.id, false)}
                       className={`px-3 py-1 text-xs rounded transition-colors whitespace-nowrap ${
                         spell.prepared 
-                          ? 'bg-green-500 text-white' 
+                          ? 'bg-emerald-600 text-white' 
                           : 'bg-[var(--app-border)] text-[var(--app-fg)] hover:bg-[var(--app-border)]'
                       }`}
                     >
@@ -394,7 +394,7 @@ export function CharacterSpells({ character, onUpdate }: CharacterSpellsProps) {
                       onClick={() => toggleSpellPrepared(cantrip.id, true)}
                       className={`px-3 py-1 text-xs rounded transition-colors whitespace-nowrap ${
                         cantrip.prepared 
-                          ? 'bg-green-500 text-white' 
+                          ? 'bg-emerald-600 text-white' 
                           : 'bg-[var(--app-border)] text-[var(--app-fg)] hover:bg-[var(--app-border)]'
                       }`}
                     >
@@ -453,7 +453,7 @@ export function CharacterSpells({ character, onUpdate }: CharacterSpellsProps) {
                       <button
                         onClick={() => updateSpellSlot(slot.level, -1)}
                         disabled={slot.used === 0}
-                        className="px-2 py-1 text-xs rounded bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-2 py-1 text-xs rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         -
                       </button>
