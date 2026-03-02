@@ -7,34 +7,25 @@ export default function SessionState() {
   const [currentSession, setCurrentSession] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load current session from localStorage
     const loadSession = () => {
       const savedSession = localStorage.getItem('currentSession');
-      console.log('SessionState: Loading session from localStorage:', savedSession);
       setCurrentSession(savedSession);
     };
 
-    // Initial load
     loadSession();
 
-    // Listen for storage changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'currentSession') {
-        console.log('SessionState: Storage changed:', e.newValue);
         setCurrentSession(e.newValue);
       }
     };
 
-    // Listen for custom session events
     const handleSessionUpdate = () => {
-      console.log('SessionState: Session update event received');
       loadSession();
     };
 
-    // Listen for visibility changes (when user returns to tab)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('SessionState: Tab became visible, reloading session');
         loadSession();
       }
     };
@@ -53,7 +44,6 @@ export default function SessionState() {
   const clearSession = () => {
     localStorage.removeItem('currentSession');
     setCurrentSession(null);
-    // Dispatch event to notify other components
     window.dispatchEvent(new Event('sessionUpdated'));
   };
 

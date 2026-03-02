@@ -19,16 +19,12 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     initializeSession();
     loadLocalCharacters();
     
-    // Save current session to localStorage
     if (sessionCode) {
       localStorage.setItem('currentSession', sessionCode);
-      // Dispatch event to notify SessionState component
       window.dispatchEvent(new Event('sessionUpdated'));
     }
     
-    // Set up real-time subscription
     const subscription = subscribeToSession(sessionCode, (payload) => {
-      console.log('Session updated:', payload);
       setSession(payload.new);
     });
 
@@ -39,19 +35,12 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
   const loadLocalCharacters = () => {
     try {
-      console.log('Loading local characters...');
-      const savedCharacters = localStorage.getItem('dnd-sheets.characters.v1'); // Use correct key
-      console.log('Raw saved characters:', savedCharacters);
+      const savedCharacters = localStorage.getItem('dnd-sheets.characters.v1');
       
       if (savedCharacters) {
         const parsed = JSON.parse(savedCharacters);
-        const characters = parsed.characters || []; // Extract characters array
-        console.log('Parsed characters:', characters);
-        console.log('Characters length:', characters.length);
+        const characters = parsed.characters || [];
         setLocalCharacters(characters);
-        console.log('Local characters loaded successfully:', characters.length);
-      } else {
-        console.log('No saved characters found in localStorage');
       }
     } catch (err) {
       console.error('Error loading local characters:', err);
@@ -60,8 +49,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
   const importCharacterToSession = async (character: any) => {
     try {
-      console.log('Importing character to session:', character);
-      
       // Check if character already exists in session
       if (session?.characters?.some((char: any) => char.id === character.id)) {
         alert('Este personagem já está na sessão!');
@@ -74,8 +61,11 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       // Show success message
       alert(`${character.name} foi adicionado à sessão!`);
       
-      // Refresh the session page
-      window.location.reload();
+      // Update local state instead of full reload
+      const updatedSession = await getSession(sessionCode);
+      if (updatedSession) {
+        setSession(updatedSession);
+      }
     } catch (err) {
       console.error('Error importing character:', err);
       alert('Erro ao importar personagem');
@@ -88,24 +78,18 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     }
 
     try {
-      console.log('Removing character from session:', characterId);
-      
-      // Get current session
       const currentSession = await getSession(sessionCode);
       if (!currentSession) {
         throw new Error('Sessão não encontrada');
       }
 
-      // Remove character from session
       const updatedCharacters = currentSession.characters.filter((char: any) => char.id !== characterId);
       
-      // Update session with removed character
       await updateSession(sessionCode, {
         characters: updatedCharacters,
         active_players: Math.max(0, currentSession.active_players - 1)
       });
       
-      // Update local state
       setSession((prev: any) => prev ? {
         ...prev,
         characters: updatedCharacters,
@@ -122,47 +106,23 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const initializeSession = async () => {
     try {
       setLoading(true);
-      console.log('Initializing session with code:', sessionCode);
       
-      // Try to get existing session
-      let existingSession = await getSession(sessionCode);
-      console.log('Existing session found:', existingSession);
+      const existingSession = await getSession(sessionCode);
       
-      // If session doesn't exist, show error instead of creating
       if (!existingSession) {
-        console.log('Session not found, showing error');
         setError(`Sessão "${sessionCode}" não encontrada ou foi encerrada.`);
         return;
       }
       
-      console.log('Session loaded successfully:', existingSession);
       setSession(existingSession);
     } catch (err) {
-      console.error('Error initializing session:', err);
       setError(`Erro ao carregar sessão: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddCharacter = async (character: any) => {
-    try {
-      await addCharacterToSession(sessionCode, character, 'Player');
-    } catch (err) {
-      console.error('Error adding character:', err);
-    }
-  };
-
-  const handleAddRoll = async (roll: any) => {
-    try {
-      await addRollToSession(sessionCode, roll);
-    } catch (err) {
-      console.error('Error adding roll:', err);
-    }
-  };
-
   const handleLeaveSession = async () => {
-    // Show confirmation dialog
     const confirmed = window.confirm(
       'Tem certeza que deseja encerrar a sessão?\n\n' +
       '⚠️ ATENÇÃO: Isso irá:\n' +
@@ -175,26 +135,15 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     
     if (confirmed) {
       try {
-        console.log('Deleting session from database...');
-        
-        // Delete session from database
         const deletedSession = await deleteSession(sessionCode);
         
-        // Check if session was actually deleted
         if (deletedSession === null) {
-          console.log('Session was not found or already deleted');
           alert('Sessão não encontrada ou já foi encerrada.');
         } else {
-          console.log('Session successfully deleted:', deletedSession);
-          
-          // Clear current session from localStorage
           localStorage.removeItem('currentSession');
-          
-          // Show success message
           alert('Sessão encerrada com sucesso!');
         }
         
-        // Navigate back to campaigns
         router.push('/campaigns');
       } catch (err) {
         console.error('Error deleting session:', err);
