@@ -5,11 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase, subscribeToSession, createSession, getSession, updateSession, addCharacterToSession, addRollToSession, deleteSession } from "@/lib/supabase";
 
-export default function SessionPage() {
-  const params = useParams();
+export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = useParams();
+  const sessionCode = (resolvedParams.id as string).toUpperCase();
   const router = useRouter();
-  const sessionCode = params.id as string;
-
   const [activeTab, setActiveTab] = useState<'characters' | 'map' | 'rolls'>('characters');
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -41,11 +40,12 @@ export default function SessionPage() {
   const loadLocalCharacters = () => {
     try {
       console.log('Loading local characters...');
-      const savedCharacters = localStorage.getItem('characters');
+      const savedCharacters = localStorage.getItem('dnd-sheets.characters.v1'); // Use correct key
       console.log('Raw saved characters:', savedCharacters);
       
       if (savedCharacters) {
-        const characters = JSON.parse(savedCharacters);
+        const parsed = JSON.parse(savedCharacters);
+        const characters = parsed.characters || []; // Extract characters array
         console.log('Parsed characters:', characters);
         console.log('Characters length:', characters.length);
         setLocalCharacters(characters);
@@ -62,14 +62,60 @@ export default function SessionPage() {
     try {
       console.log('Importing character to session:', character);
       
+      // Check if character already exists in session
+      if (session?.characters?.some((char: any) => char.id === character.id)) {
+        alert('Este personagem já está na sessão!');
+        return;
+      }
+      
       // Add character to session
       await addCharacterToSession(sessionCode, character, 'Player');
       
       // Show success message
       alert(`${character.name} foi adicionado à sessão!`);
+      
+      // Refresh the session page
+      window.location.reload();
     } catch (err) {
       console.error('Error importing character:', err);
       alert('Erro ao importar personagem');
+    }
+  };
+
+  const removeCharacterFromSession = async (characterId: string) => {
+    if (!window.confirm('Tem certeza que deseja remover esta ficha da sessão?')) {
+      return;
+    }
+
+    try {
+      console.log('Removing character from session:', characterId);
+      
+      // Get current session
+      const currentSession = await getSession(sessionCode);
+      if (!currentSession) {
+        throw new Error('Sessão não encontrada');
+      }
+
+      // Remove character from session
+      const updatedCharacters = currentSession.characters.filter((char: any) => char.id !== characterId);
+      
+      // Update session with removed character
+      await updateSession(sessionCode, {
+        characters: updatedCharacters,
+        active_players: Math.max(0, currentSession.active_players - 1)
+      });
+      
+      // Update local state
+      setSession((prev: any) => prev ? {
+        ...prev,
+        characters: updatedCharacters,
+        active_players: Math.max(0, prev.active_players - 1)
+      } : null);
+      
+      alert('Ficha removida da sessão com sucesso!');
+    } catch (err) {
+      console.error('Error removing character from session:', err);
+      alert('Erro ao remover ficha da sessão. Tente novamente.');
     }
   };
 
@@ -118,7 +164,7 @@ export default function SessionPage() {
   const handleLeaveSession = async () => {
     // Show confirmation dialog
     const confirmed = window.confirm(
-      'Tem certeza que deseja sair da sessão?\n\n' +
+      'Tem certeza que deseja encerrar a sessão?\n\n' +
       '⚠️ ATENÇÃO: Isso irá:\n' +
       '• Encerrar a sessão permanentemente\n' +
       '• Apagar todos os dados da sessão\n' +
@@ -205,7 +251,7 @@ export default function SessionPage() {
             onClick={handleLeaveSession}
             className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--app-border)] bg-red-500 text-white hover:bg-red-600 transition-colors"
           >
-            Sair da Sessão
+            Encerrar Sessão
           </button>
           <Link 
             href="/campaigns"
@@ -273,17 +319,28 @@ export default function SessionPage() {
                     <p className="text-sm">Nenhuma ficha nesta sessão</p>
                   </div>
                 ) : (
-                  session.characters.map((character: any) => (
-                    <div key={character.id} className="border border-[var(--app-border)] rounded-lg p-4 bg-[var(--app-bg)]">
-                      <h3 className="font-semibold text-[var(--app-fg)] mb-2">{character.name}</h3>
-                      <p className="text-sm text-[var(--app-muted)] mb-1">{character.className} Nível {character.level}</p>
-                      <p className="text-sm text-[var(--app-muted)] mb-3">{character.race}</p>
-                      <Link 
-                        href={`/characters/${character.id}`}
-                        className="text-sm text-blue-400 hover:text-blue-300"
-                      >
-                        Ver Ficha →
-                      </Link>
+                  session.characters.map((character: any, index: number) => (
+                    <div key={`session-${character.id}-${index}`} className="border border-[var(--app-border)] rounded-lg p-4 bg-[var(--app-bg)]">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-[var(--app-fg)] mb-2">{character.name}</h3>
+                          <p className="text-sm text-[var(--app-muted)] mb-1">{character.className} Nível {character.level}</p>
+                          <p className="text-sm text-[var(--app-muted)] mb-3">{character.race}</p>
+                          <Link 
+                            href={`/characters/${character.id}`}
+                            className="text-sm text-blue-400 hover:text-blue-300"
+                          >
+                            Ver Ficha →
+                          </Link>
+                        </div>
+                        <button
+                          onClick={() => removeCharacterFromSession(character.id)}
+                          className="text-red-500 hover:text-red-600 text-xl leading-none ml-2"
+                          title="Remover ficha da sessão"
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}
