@@ -600,7 +600,7 @@ export default function MapClient() {
       </div>
 
       <div className="relative">
-        {/* Zoom Controls - Fixed to map container */}
+        {/* Zoom Controls - Outside map container */}
         <div className="absolute top-4 right-4 flex flex-col gap-2 z-50">
           <button
             className="w-10 h-10 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)] flex items-center justify-center text-sm font-medium shadow-sm"
@@ -636,19 +636,23 @@ export default function MapClient() {
           onPointerUp={onPointerUp}
           onContextMenu={handleContextMenu}
           onMouseDown={handleMouseDown}
-          style={{
-            transform: `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`,
-            transformOrigin: '0 0',
-            backgroundImage: backgroundCss
-              ? `url(${backgroundCss}), linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`
-              : `linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`,
-            backgroundSize: backgroundCss
-              ? `cover, ${gridSize * scale}px ${gridSize * scale}px, ${gridSize * scale}px ${gridSize * scale}px`
-              : `${gridSize * scale}px ${gridSize * scale}px, ${gridSize * scale}px ${gridSize * scale}px`,
-            backgroundPosition: backgroundCss ? "center, 0 0, 0 0" : "0 0, 0 0",
-            backgroundRepeat: backgroundCss ? "no-repeat, repeat, repeat" : "repeat, repeat",
-          }}
         >
+          {/* Map content with zoom/pan transformations */}
+          <div
+            className="absolute inset-0"
+            style={{
+              transform: `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`,
+              transformOrigin: '0 0',
+              backgroundImage: backgroundCss
+                ? `url(${backgroundCss}), linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`
+                : `linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`,
+              backgroundSize: backgroundCss
+                ? `cover, ${gridSize * scale}px ${gridSize * scale}px, ${gridSize * scale}px ${gridSize * scale}px`
+                : `${gridSize * scale}px ${gridSize * scale}px, ${gridSize * scale}px ${gridSize * scale}px`,
+              backgroundPosition: backgroundCss ? "center, 0 0, 0 0" : "0 0, 0 0",
+              backgroundRepeat: backgroundCss ? "no-repeat, repeat, repeat" : "repeat, repeat",
+            }}
+          >
         {tokens.map((t) => {
           const isCharacter = t.kind === "character";
           const tokenSize = isCharacter ? "h-20 w-20" : "h-24 w-24";
@@ -698,9 +702,10 @@ export default function MapClient() {
           );
         })}
       </div>
+          </div>
       </div>
       
-      {/* Popup de Rolagem de Dados */}
+      {/* Dice Roller Popup */}
       <MapDiceRoller isOpen={isDiceRollerOpen} onClose={() => setIsDiceRollerOpen(false)} />
     </div>
   );
