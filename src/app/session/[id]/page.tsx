@@ -276,7 +276,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                           <p className="text-sm text-[var(--app-muted)] mb-1">{character.className} Nível {character.level}</p>
                           <p className="text-sm text-[var(--app-muted)] mb-3">{character.race}</p>
                           <Link 
-                            href={`/characters/${character.id}`}
+                            href={`/session-characters/${character.id}`}
                             className="text-sm text-blue-400 hover:text-blue-300"
                           >
                             Ver Ficha →

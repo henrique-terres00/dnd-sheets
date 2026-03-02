@@ -168,6 +168,7 @@ export default function CharacterSheetClient({ id }: { id: string }) {
 
   const [character, setCharacter] = useState<Character | null>(() => {
     if (typeof window === "undefined") return null;
+    
     const fromDraft = (() => {
       if (!initialDraft) return null;
       try {
