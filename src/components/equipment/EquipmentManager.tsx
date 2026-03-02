@@ -97,7 +97,63 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
   };
 
   const filteredWeapons = filterItems(DEFAULT_WEAPONS, 'name');
+
+  // Group weapons by category for better organization
+  const groupedWeapons = filteredWeapons.reduce((groups: Record<string, Weapon[]>, weapon: Weapon) => {
+    const category = weapon.type;
+    if (!groups[category]) groups[category] = [];
+    groups[category].push(weapon);
+    return groups;
+  }, {} as Record<string, Weapon[]>);
+
+  const categoryIcons = {
+    'simpleMelee': '🗡️',
+    'simpleRanged': '🏹', 
+    'martialMelee': '⚔️',
+    'martialRanged': '🎯'
+  };
+
+  const categoryColors = {
+    'simpleMelee': 'text-blue-400 border-blue-400/30',
+    'simpleRanged': 'text-green-400 border-green-400/30', 
+    'martialMelee': 'text-red-400 border-red-400/30',
+    'martialRanged': 'text-purple-400 border-purple-400/30'
+  };
+
+  const categoryNames = {
+    'simpleMelee': 'Armas Simples Corpo-a-Corpo',
+    'simpleRanged': 'Armas Simples à Distância', 
+    'martialMelee': 'Armas Marciais Corpo-a-Corpo',
+    'martialRanged': 'Armas Marciais à Distância'
+  };
+
+  const armorCategoryNames = {
+    'light': 'Armaduras Leves',
+    'medium': 'Armaduras Médias',
+    'heavy': 'Armaduras Pesadas'
+  };
+
+  const armorCategoryIcons = {
+    'light': '🛡️',
+    'medium': '⚔️',
+    'heavy': '⚜️'
+  };
+
+  const armorCategoryColors = {
+    'light': 'text-green-400 border-green-400/30',
+    'medium': 'text-yellow-400 border-yellow-400/30',
+    'heavy': 'text-red-400 border-red-400/30'
+  };
   const filteredArmor = filterItems(DEFAULT_ARMOR, 'name');
+
+  // Group armor by category for better organization
+  const groupedArmor = filteredArmor.reduce((groups: Record<string, Armor[]>, armor: Armor) => {
+    const category = armor.type;
+    if (!groups[category]) groups[category] = [];
+    groups[category].push(armor);
+    return groups;
+  }, {} as Record<string, Armor[]>);
+
   const filteredEquipment = filterItems(DEFAULT_EQUIPMENT, 'name');
 
   if (!isOpen) return null;
@@ -175,64 +231,116 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
         {/* Content */}
         <div className="min-h-[400px]">
           {activeTab === 'weapons' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredWeapons.map((weapon) => {
-                const isAdded = addedItems.has(`weapon-${weapon.id}`);
-                return (
-                  <div key={weapon.id} className={`p-3 border rounded-lg bg-[var(--app-bg)] transition-all duration-300 ${
-                    isAdded ? 'border-green-500 bg-green-500/10' : 'border-[var(--app-border)]'
-                  }`}>
-                    <h4 className="font-medium text-[var(--app-fg)] mb-1">{weapon.name}</h4>
-                    <p className="text-xs text-[var(--app-muted)] mb-2">
-                      {weapon.damage} {weapon.damageType} • {weapon.ability === 'str' ? 'Força' : weapon.ability === 'dex' ? 'Destreza' : 'Inteligência'}
-                    </p>
-                    <p className="text-xs text-[var(--app-muted)] mb-3">
-                      {weapon.properties.join(', ') || 'Sem propriedades'}
-                    </p>
-                    <button
-                      className={`w-full rounded-lg border px-3 py-1 text-sm transition-all duration-300 ${
-                        isAdded 
-                          ? 'border-green-500 bg-green-500 text-white' 
-                          : 'border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)]'
-                      }`}
-                      onClick={() => handleAddWeapon(weapon)}
-                    >
-                      {isAdded ? '✓ Adicionado' : 'Adicionar'}
-                    </button>
+            <div className="space-y-6">
+              {Object.entries(groupedWeapons)
+                .sort(([a], [b]) => {
+                  // Sort categories by priority: simpleMelee -> simpleRanged -> martialMelee -> martialRanged
+                  const priorityOrder = ['simpleMelee', 'simpleRanged', 'martialMelee', 'martialRanged'];
+                  const aIndex = priorityOrder.indexOf(a);
+                  const bIndex = priorityOrder.indexOf(b);
+                  return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+                })
+                .map(([category, weapons]) => (
+                  <div key={category} className="mb-8">
+                    <div className={`flex items-center gap-2 mb-4 p-3 rounded-lg border ${categoryColors[category as keyof typeof categoryColors] || 'border-[var(--app-border)]'} bg-[var(--app-surface)]`}>
+                      <span className="text-2xl">{categoryIcons[category as keyof typeof categoryIcons] || '🗡️'}</span>
+                      <h3 className="text-base font-bold text-[var(--app-fg)]">
+                        {categoryNames[category as keyof typeof categoryNames] || category}
+                      </h3>
+                      <span className="text-xs text-[var(--app-muted)] ml-auto">
+                        {weapons.length} itens
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {weapons
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((weapon) => {
+                          const isAdded = addedItems.has(`weapon-${weapon.id}`);
+                          return (
+                            <div key={weapon.id} className={`p-3 border rounded-lg bg-[var(--app-bg)] transition-all duration-300 ${
+                              isAdded ? 'border-green-500 bg-green-500/10' : 'border-[var(--app-border)]'
+                            }`}>
+                              <h4 className="font-medium text-[var(--app-fg)] mb-1">{weapon.name}</h4>
+                              <p className="text-xs text-[var(--app-muted)] mb-2">
+                                {weapon.damage} {weapon.damageType} • {weapon.ability === 'str' ? 'Força' : weapon.ability === 'dex' ? 'Destreza' : 'Inteligência'}
+                              </p>
+                              <p className="text-xs text-[var(--app-muted)] mb-3">
+                                {weapon.properties.join(', ') || 'Sem propriedades'}
+                              </p>
+                              <button
+                                className={`w-full rounded-lg border px-3 py-1 text-sm transition-all duration-300 ${
+                                  isAdded 
+                                    ? 'border-green-500 bg-green-500 text-white' 
+                                    : 'border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)]'
+                                }`}
+                                onClick={() => handleAddWeapon(weapon)}
+                              >
+                                {isAdded ? '✓ Adicionado' : 'Adicionar'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
                   </div>
-                );
-              })}
+                ))}
             </div>
           )}
 
           {activeTab === 'armor' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredArmor.map((armor) => {
-                const isAdded = addedItems.has(`armor-${armor.id}`);
-                return (
-                  <div key={armor.id} className={`p-3 border rounded-lg bg-[var(--app-bg)] transition-all duration-300 ${
-                    isAdded ? 'border-green-500 bg-green-500/10' : 'border-[var(--app-border)]'
-                  }`}>
-                    <h4 className="font-medium text-[var(--app-fg)] mb-1">{armor.name}</h4>
-                    <p className="text-xs text-[var(--app-muted)] mb-2">
-                      CA {armor.baseAC} {armor.dexBonus ? '+ Destreza' : ''}
-                    </p>
-                    <p className="text-xs text-[var(--app-muted)] mb-3">
-                      {armor.stealthDisadvantage ? 'Desvantagem em Furtividade' : 'Sem penalidade'}
-                    </p>
-                    <button
-                      className={`w-full rounded-lg border px-3 py-1 text-sm transition-all duration-300 ${
-                        isAdded 
-                          ? 'border-green-500 bg-green-500 text-white' 
-                          : 'border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)]'
-                      }`}
-                      onClick={() => handleAddArmor(armor)}
-                    >
-                      {isAdded ? '✓ Adicionado' : 'Adicionar'}
-                    </button>
+            <div className="space-y-6">
+              {Object.entries(groupedArmor)
+                .sort(([a], [b]) => {
+                  // Sort categories by priority: light -> medium -> heavy
+                  const priorityOrder = ['light', 'medium', 'heavy'];
+                  const aIndex = priorityOrder.indexOf(a);
+                  const bIndex = priorityOrder.indexOf(b);
+                  return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+                })
+                .map(([category, armors]) => (
+                  <div key={category} className="mb-8">
+                    <div className={`flex items-center gap-2 mb-4 p-3 rounded-lg border ${armorCategoryColors[category as keyof typeof armorCategoryColors] || 'border-[var(--app-border)]'} bg-[var(--app-surface)]`}>
+                      <span className="text-2xl">{armorCategoryIcons[category as keyof typeof armorCategoryIcons] || '🛡️'}</span>
+                      <h3 className="text-base font-bold text-[var(--app-fg)]">
+                        {armorCategoryNames[category as keyof typeof armorCategoryNames] || category}
+                      </h3>
+                      <span className="text-xs text-[var(--app-muted)] ml-auto">
+                        {armors.length} itens
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {armors
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((armor) => {
+                          const isAdded = addedItems.has(`armor-${armor.id}`);
+                          return (
+                            <div key={armor.id} className={`p-3 border rounded-lg bg-[var(--app-bg)] transition-all duration-300 ${
+                              isAdded ? 'border-green-500 bg-green-500/10' : 'border-[var(--app-border)]'
+                            }`}>
+                              <h4 className="font-medium text-[var(--app-fg)] mb-1">{armor.name}</h4>
+                              <p className="text-xs text-[var(--app-muted)] mb-2">
+                                CA {armor.baseAC} {armor.dexBonus ? '+ Destreza' : ''} {armor.maxDexBonus ? `(máx ${armor.maxDexBonus})` : ''}
+                              </p>
+                              <p className="text-xs text-[var(--app-muted)] mb-3">
+                                {armor.strengthRequirement ? `Força ${armor.strengthRequirement} necessária` : ''}
+                                {armor.strengthRequirement && armor.stealthDisadvantage ? ' • ' : ''}
+                                {armor.stealthDisadvantage ? 'Desvantagem em Furtividade' : armor.strengthRequirement ? '' : 'Sem penalidade'}
+                              </p>
+                              <button
+                                className={`w-full rounded-lg border px-3 py-1 text-sm transition-all duration-300 ${
+                                  isAdded 
+                                    ? 'border-green-500 bg-green-500 text-white' 
+                                    : 'border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)]'
+                                }`}
+                                onClick={() => handleAddArmor(armor)}
+                              >
+                                {isAdded ? '✓ Adicionado' : 'Adicionar'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
                   </div>
-                );
-              })}
+                ))}
             </div>
           )}
 

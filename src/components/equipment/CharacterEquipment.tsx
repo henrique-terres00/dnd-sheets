@@ -118,7 +118,7 @@ export function CharacterEquipment({ character, onUpdate }: CharacterEquipmentPr
                 </div>
               ) : (
                 <div className="text-center text-[var(--app-muted)]">
-                  <div className="text-2xl mb-1">🛡️</div>
+                  <div className="text-2xl mb-1">⚜️</div>
                   <div className="text-xs">Nenhuma armadura equipada</div>
                 </div>
               )}
