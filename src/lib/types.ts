@@ -23,6 +23,7 @@ export type Skill =
 export type SavingThrow = Ability;
 
 import type { CharacterEquipment } from "./equipment";
+import type { CharacterSpellsState } from "./spells";
 
 export type Character = {
   id: string;
@@ -86,4 +87,7 @@ export type Character = {
 
   // New equipment system
   characterEquipment?: CharacterEquipment;
+
+  // New spells system
+  characterSpells?: CharacterSpellsState;
 };

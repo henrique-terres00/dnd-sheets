@@ -91,7 +91,7 @@ export function CharacterEquipment({ character, onUpdate }: CharacterEquipmentPr
       <div className="space-y-4">
         {/* Armor Slots */}
         <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
-          <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-medium text-[var(--app-fg)] mb-4 flex items-center justify-between">
             <span>🛡️ Armadura</span>
             <button
               className="text-xs px-2 py-1 rounded border border-[var(--app-border)] bg-[var(--app-bg)] text-[var(--app-muted)] hover:text-[var(--app-fg)]"
@@ -106,7 +106,11 @@ export function CharacterEquipment({ character, onUpdate }: CharacterEquipmentPr
             <div className="border-2 border-dashed border-[var(--app-border)] rounded-lg p-3 min-h-[80px] flex flex-col items-center justify-center">
               {currentEquipment.armor ? (
                 <div className="text-center">
-                  <div className="text-lg mb-1">🛡️</div>
+                  <div className="text-lg mb-1">
+                    {currentEquipment.armor.type === 'heavy' ? '⚜️' : 
+                     currentEquipment.armor.type === 'medium' ? '🔰' : 
+                     currentEquipment.armor.type === 'light' ? '👘' : ''}
+                  </div>
                   <div className="text-sm font-medium text-[var(--app-fg)]">{currentEquipment.armor.name}</div>
                   <div className="text-xs text-[var(--app-muted)]">CA {currentEquipment.armor.baseAC}</div>
                   <button
@@ -118,7 +122,6 @@ export function CharacterEquipment({ character, onUpdate }: CharacterEquipmentPr
                 </div>
               ) : (
                 <div className="text-center text-[var(--app-muted)]">
-                  <div className="text-2xl mb-1">⚜️</div>
                   <div className="text-xs">Nenhuma armadura equipada</div>
                 </div>
               )}
@@ -140,7 +143,6 @@ export function CharacterEquipment({ character, onUpdate }: CharacterEquipmentPr
                 </div>
               ) : (
                 <div className="text-center text-[var(--app-muted)]">
-                  <div className="text-2xl mb-1">🛡️</div>
                   <div className="text-xs">Nenhum escudo equipado</div>
                 </div>
               )}
@@ -163,7 +165,6 @@ export function CharacterEquipment({ character, onUpdate }: CharacterEquipmentPr
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {currentEquipment.weapons.length === 0 ? (
               <div className="col-span-3 border-2 border-dashed border-[var(--app-border)] rounded-lg p-6 text-center text-[var(--app-muted)]">
-                <div className="text-3xl mb-2">⚔️</div>
                 <div className="text-sm">Nenhuma arma equipada</div>
                 <div className="text-xs mt-1">Adicione armas para usar em combate</div>
               </div>
@@ -171,7 +172,11 @@ export function CharacterEquipment({ character, onUpdate }: CharacterEquipmentPr
               currentEquipment.weapons.map((weapon: Weapon) => (
                 <div key={weapon.id} className="border-2 border-dashed border-[var(--app-border)] rounded-lg p-3 min-h-[100px]">
                   <div className="text-center">
-                    <div className="text-lg mb-1">⚔️</div>
+                    <div className="text-lg mb-1">
+                      {weapon.type === 'simpleMelee' ? '🗡️' : 
+                       weapon.type === 'simpleRanged' ? '🏹' : 
+                       weapon.type === 'martialMelee' ? '⚔️' : '🎯'}
+                    </div>
                     <div className="text-sm font-medium text-[var(--app-fg)]">{weapon.name}</div>
                     <div className="text-xs text-[var(--app-muted)]">{weapon.damage}</div>
                     <div className="text-xs text-[var(--app-muted)]">{weapon.damageType}</div>
@@ -206,7 +211,6 @@ export function CharacterEquipment({ character, onUpdate }: CharacterEquipmentPr
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {currentEquipment.equipment.length === 0 ? (
               <div className="col-span-4 border-2 border-dashed border-[var(--app-border)] rounded-lg p-6 text-center text-[var(--app-muted)]">
-                <div className="text-3xl mb-2">🎒</div>
                 <div className="text-sm">Nenhum equipamento</div>
                 <div className="text-xs mt-1">Adicione itens como mochila, corda, etc.</div>
               </div>

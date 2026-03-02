@@ -134,8 +134,8 @@ export function EquipmentManager({ isOpen, onClose, onAddWeapon, onAddArmor, onA
   };
 
   const armorCategoryIcons = {
-    'light': '🛡️',
-    'medium': '⚔️',
+    'light': '👘',
+    'medium': '🔰',
     'heavy': '⚜️'
   };
 

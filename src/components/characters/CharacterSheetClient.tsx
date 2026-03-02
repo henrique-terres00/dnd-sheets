@@ -7,7 +7,9 @@ import { abilityMod, formatSigned, proficiencyBonusFromLevel, SKILL_TO_ABILITY }
 import { getCharacter, upsertCharacter } from "@/lib/characterStore";
 import { getSrdClass, getSrdRace, SRD_CLASSES, SRD_RACES } from "@/lib/srd";
 import { CharacterEquipment } from "@/components/equipment/CharacterEquipment";
+import { CharacterSpells } from "@/components/spells/CharacterSpells";
 import { calculateArmorClass } from "@/lib/equipmentUtils";
+import type { CharacterSpellsState } from "@/lib/spells";
 import type { Ability, Character, Skill } from "@/lib/types";
 
 const ABILITIES: { key: Ability; label: string }[] = [
@@ -798,19 +800,23 @@ export default function CharacterSheetClient({ id }: { id: string }) {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className={boxClass()}>
-              <div className="text-sm font-semibold">Ataques &amp; Magias</div>
-              <textarea
-                className={`${inputClass()} mt-3 min-h-[240px] resize-y`}
-                value={character.attacksAndSpells}
-                onChange={(e) => update({ attacksAndSpells: e.target.value })}
-              />
-            </div>
-            <div className={boxClass()}>
-              <div className="text-sm font-semibold">Equipamento</div>
+              <div className="text-sm font-semibold mb-4">Equipamento</div>
               <CharacterEquipment 
                 character={character}
                 onUpdate={(equipment) => update({ characterEquipment: equipment })}
               />
+            </div>
+            <div className={`${boxClass()} h-96 flex flex-col`}>
+              <div className="text-sm font-semibold flex-shrink-0">Ataques &amp; Magias</div>
+              <div className="flex-1 overflow-hidden">
+                <CharacterSpells 
+                  character={character}
+                  onUpdate={(spells: CharacterSpellsState) => {
+                    // TODO: Update character with spells data
+                    console.log('Spells updated:', spells);
+                  }}
+                />
+              </div>
             </div>
           </div>
 
