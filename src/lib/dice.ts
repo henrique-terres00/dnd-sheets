@@ -5,7 +5,7 @@ export interface DiceRoll {
   playerId: string;
   playerName: string;
   characterName: string;
-  type: 'attack' | 'skill' | 'saving-throw' | 'ability-check' | 'damage' | 'initiative';
+  type: 'attack' | 'skill' | 'saving-throw' | 'ability-check' | 'damage' | 'initiative' | 'spell';
   label: string;
   formula: string;
   result: number;

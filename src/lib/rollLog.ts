@@ -62,6 +62,7 @@ export function formatRollMessage(roll: DiceRoll): string {
     case 'ability-check': typeIcon = '💪'; break;
     case 'damage': typeIcon = '💥'; break;
     case 'initiative': typeIcon = '⚡'; break;
+    case 'spell': typeIcon = '🔮'; break;
   }
   
   const criticalIcon = roll.critical === 'success' ? ' 🎯' : roll.critical === 'failure' ? ' ❌' : '';

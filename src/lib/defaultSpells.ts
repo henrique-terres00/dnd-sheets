@@ -880,19 +880,6 @@ export const DEFAULT_SPELLS: Spell[] = [
     classes: ["druid", "ranger"]
   },
   {
-    id: "sleetStorm",
-    name: "Tempestade de Granizo",
-    level: 3,
-    school: "Conjuração",
-    castingTime: "1 ação",
-    range: "300 pés",
-    components: "V, S, M (pó e um pouco de água)",
-    duration: "Concentração, até 1 minuto",
-    description: "Você cria uma tempestade de granizo em um cilindro de 40 pés de altura e 20 pés de raio. A área é heavily obscured e difficult terrain.",
-    prepared: true,
-    classes: ["druid", "wizard", "sorcerer"]
-  },
-  {
     id: "bestowCurse",
     name: "Conceder Maldição",
     level: 3,

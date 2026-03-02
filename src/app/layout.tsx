@@ -49,6 +49,9 @@ export default function RootLayout({
                 <Link className="hover:text-[var(--app-fg)]" href="/characters">
                   Personagens
                 </Link>
+                <Link className="hover:text-[var(--app-fg)]" href="/rolls">
+                  Rolagens
+                </Link>
                 <Link className="hover:text-[var(--app-fg)]" href="/map">
                   Mapa
                 </Link>

@@ -7,6 +7,7 @@ import { DEFAULT_SPELLS, getSpellsByClass, getCantripsByClass } from "@/lib/defa
 import { castSpell, calculateSpellcastingAbility, calculateSpellSlots, type SpellTarget } from "@/lib/spellcasting";
 import { proficiencyBonusFromLevel } from "@/lib/dnd5e";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { addRollToLog } from "@/lib/rollLog";
 
 interface CharacterSpellsProps {
   character: Character;
@@ -130,6 +131,20 @@ export function CharacterSpells({ character, onUpdate }: CharacterSpellsProps) {
     if (spell.level > 0) {
       updateSpellSlot(spell.level, 1);
     }
+
+    // Add to roll log
+    addRollToLog({
+      id: Date.now().toString(),
+      playerId: 'character',
+      playerName: character.name || 'Personagem',
+      characterName: character.name || 'Personagem',
+      type: 'spell',
+      label: spell.name,
+      formula: spell.level > 0 ? `Nível ${spell.level}` : 'Truque',
+      result: result.damage || result.healing || 0,
+      details: result.description,
+      timestamp: new Date()
+    });
 
     // Add to cast results
     setCastResults(prev => [result, ...prev].slice(0, 5)); // Keep last 5 casts
@@ -454,6 +469,27 @@ export function CharacterSpells({ character, onUpdate }: CharacterSpellsProps) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Cast Results */}
+        {castResults.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <h3 className="text-sm font-semibold text-[var(--app-fg)] mb-2">Resultados das Magias</h3>
+            {castResults.map((result, index) => (
+              <div key={index} className="border border-[var(--app-border)] rounded-lg p-3 bg-[var(--app-surface)]">
+                <div className="text-sm">
+                  <div className="font-medium text-[var(--app-fg)] mb-1">{result.spell.name}</div>
+                  <div className="text-[var(--app-muted)]">{result.description}</div>
+                  {result.damage && (
+                    <div className="text-xs text-red-400 mt-1">Dano: {result.damage}</div>
+                  )}
+                  {result.healing && (
+                    <div className="text-xs text-green-400 mt-1">Cura: {result.healing}</div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

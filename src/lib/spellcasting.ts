@@ -98,10 +98,10 @@ function handleFireBolt(spell: Spell, caster: any, target: SpellTarget | undefin
   
   if (target.ac && attackRoll.total >= target.ac) {
     result.attackResult = 'hit';
-    const damage = rollDamage('1d10', 0);
-    result.damage = damage.total;
+    const damage = rollDamage('1d10', 1); // Add minimum of 1
+    result.damage = damage.total || 1; // Ensure at least 1 damage
     result.damageRolls = damage.rolls;
-    result.description = `Raio de Fogo atinge ${target.name}! Ataque: ${attackRoll.total} vs CA ${target.ac}. Dano: ${damage.total} de fogo.`;
+    result.description = `Raio de Fogo atinge ${target.name}! Ataque: ${attackRoll.total} vs CA ${target.ac}. Dano: ${result.damage} de fogo.`;
   } else {
     result.attackResult = 'miss';
     result.description = `Raio de Fogo erra ${target.name}! Ataque: ${attackRoll.total} vs CA ${target.ac}.`;
@@ -120,8 +120,8 @@ function handleMagicMissile(spell: Spell, caster: any, targets: SpellTarget[], r
   targets.forEach((target, index) => {
     const missilesForTarget = index === targets.length - 1 ? missiles - (targetMissiles * (targets.length - 1)) : targetMissiles;
     for (let i = 0; i < missilesForTarget; i++) {
-      const damage = rollDamage('1d4', 1);
-      totalDamage += damage.total;
+      const damage = rollDamage('1d4', 1); // Add minimum of 1
+      totalDamage += damage.total || 1; // Ensure at least 1 damage
       allRolls.push(...damage.rolls);
     }
   });
