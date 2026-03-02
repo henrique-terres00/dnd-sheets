@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getCharacter, listCharacters } from "@/lib/characterStore";
 import type { Character } from "@/lib/types";
-import { MapDiceRoller } from "@/components/dice/MapDiceRoller";
+import { UniversalDiceRoller } from "@/components/dice/UniversalDiceRoller";
 import { InlineRollLog } from "@/components/dice/InlineRollLog";
 
 type TokenKind = "elf" | "dwarf" | "orc" | "dragon" | "goblin" | "skeleton";
@@ -706,7 +706,7 @@ export default function MapClient() {
       </div>
       
       {/* Dice Roller Popup */}
-      <MapDiceRoller isOpen={isDiceRollerOpen} onClose={() => setIsDiceRollerOpen(false)} />
+      <UniversalDiceRoller isOpen={isDiceRollerOpen} onClose={() => setIsDiceRollerOpen(false)} characters={characters} isSession={false} />
     </div>
   );
 }

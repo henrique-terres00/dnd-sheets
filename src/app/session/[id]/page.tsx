@@ -4,6 +4,11 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase, subscribeToSession, createSession, getSession, updateSession, addCharacterToSession, addRollToSession, deleteSession } from "@/lib/supabase";
+import { UniversalDiceRoller } from "@/components/dice/UniversalDiceRoller";
+import { SessionSpellCaster } from "@/components/spells/SessionSpellCaster";
+// Import formatRollMessage for consistent display
+import { formatRollMessage } from "@/lib/rollLog";
+import { getCharacter, listCharacters } from "@/lib/characterStore";
 
 export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = useParams();
@@ -14,6 +19,23 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [localCharacters, setLocalCharacters] = useState<any[]>([]);
+  const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
+  const [isSpellCasterOpen, setIsSpellCasterOpen] = useState(false);
+
+  // Clear rolls function
+  const handleClearRolls = async () => {
+    if (!sessionCode) return;
+    
+    try {
+      await updateSession(sessionCode, {
+        rolls: []
+      });
+      // Update local state to reflect the change immediately
+      setSession((prev: any) => prev ? { ...prev, rolls: [] } : null);
+    } catch (error) {
+      console.error('Error clearing rolls:', error);
+    }
+  };
 
   useEffect(() => {
     initializeSession();
@@ -33,6 +55,13 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     };
   }, [sessionCode]);
 
+  // Reload local characters when session changes
+  useEffect(() => {
+    if (session) {
+      loadLocalCharacters();
+    }
+  }, [session]);
+
   const loadLocalCharacters = () => {
     try {
       const savedCharacters = localStorage.getItem('dnd-sheets.characters.v1');
@@ -40,7 +69,13 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       if (savedCharacters) {
         const parsed = JSON.parse(savedCharacters);
         const characters = parsed.characters || [];
-        setLocalCharacters(characters);
+        
+        // Filter out characters that are already in the session
+        const availableCharacters = characters.filter((char: any) => 
+          !session?.characters?.some((sessionChar: any) => sessionChar.id === char.id)
+        );
+        
+        setLocalCharacters(availableCharacters);
       }
     } catch (err) {
       console.error('Error loading local characters:', err);
@@ -66,6 +101,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       if (updatedSession) {
         setSession(updatedSession);
       }
+      
+      // Refresh local characters to show updated data
+      loadLocalCharacters();
     } catch (err) {
       console.error('Error importing character:', err);
       alert('Erro ao importar personagem');
@@ -352,12 +390,27 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-[var(--app-fg)]">🎲 Rolagens de Dados</h2>
-              <Link 
-                href="/rolls"
-                className="px-3 py-1 text-sm font-medium rounded-lg bg-purple-500 text-white hover:bg-purple-600 transition-colors"
-              >
-                Ver Rolagens
-              </Link>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsDiceRollerOpen(true)}
+                  className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-bg)] transition-colors"
+                >
+                  🎲 Rolar Dados
+                </button>
+                <button
+                  onClick={() => setIsSpellCasterOpen(true)}
+                  className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-bg)] transition-colors"
+                >
+                  🔮 Lançar Magia
+                </button>
+                <button
+                  onClick={handleClearRolls}
+                  disabled={!session?.rolls || session.rolls.length === 0}
+                  className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--app-border)] bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  🗑️ Limpar
+                </button>
+              </div>
             </div>
             
             <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -369,11 +422,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                 </div>
               ) : (
                 session.rolls.map((roll: any, index: number) => (
-                  <div key={index} className="p-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] text-sm">
-                    <div className="font-medium text-[var(--app-fg)]">{roll.player_name}</div>
-                    <div className="text-[var(--app-muted)]">{roll.roll_type}</div>
-                    <div className="text-[var(--app-fg)]">{roll.roll_result}</div>
-                    <div className="text-xs text-[var(--app-muted)] mt-1">{roll.roll_details}</div>
+                  <div key={roll.id || index} className="p-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] text-sm font-mono">
+                    {formatRollMessage(roll)}
                   </div>
                 ))
               )}
@@ -393,6 +443,22 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           </div>
         </div>
       </div>
+
+      {/* Dice Roller Modal */}
+      <UniversalDiceRoller
+        isOpen={isDiceRollerOpen}
+        onClose={() => setIsDiceRollerOpen(false)}
+        characters={[...(session?.characters || []), ...localCharacters]}
+        isSession={true}
+      />
+
+      {/* Spell Caster Modal */}
+      <SessionSpellCaster
+        isOpen={isSpellCasterOpen}
+        onClose={() => setIsSpellCasterOpen(false)}
+        sessionCharacters={session?.characters || []}
+        localCharacters={localCharacters}
+      />
     </div>
   );
 }

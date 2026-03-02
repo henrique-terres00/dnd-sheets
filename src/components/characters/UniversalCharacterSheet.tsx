@@ -1,0 +1,472 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { abilityMod, formatSigned, proficiencyBonusFromLevel, SKILL_TO_ABILITY } from "@/lib/dnd5e";
+import { getCharacter, upsertCharacter } from "@/lib/characterStore";
+import { getSrdClass, getSrdRace, SRD_CLASSES, SRD_RACES } from "@/lib/srd";
+import { CharacterEquipment } from "@/components/equipment/CharacterEquipment";
+import { UniversalCharacterSpells } from "@/components/spells/UniversalCharacterSpells";
+import { calculateArmorClass } from "@/lib/equipmentUtils";
+import type { CharacterSpellsState } from "@/lib/spells";
+import type { Ability, Character, Skill } from "@/lib/types";
+
+const ABILITIES: { key: Ability; label: string }[] = [
+  { key: "str", label: "Força" },
+  { key: "dex", label: "Destreza" },
+  { key: "con", label: "Constituição" },
+  { key: "int", label: "Inteligência" },
+  { key: "wis", label: "Sabedoria" },
+  { key: "cha", label: "Carisma" },
+];
+
+const SKILLS: { key: Skill; label: string }[] = [
+  { key: "athletics", label: "Atletismo" },
+  { key: "acrobatics", label: "Acrobacia" },
+  { key: "sleightOfHand", label: "Prestidigitação" },
+  { key: "stealth", label: "Furtividade" },
+  { key: "arcana", label: "Arcanismo" },
+  { key: "history", label: "História" },
+  { key: "investigation", label: "Investigação" },
+  { key: "nature", label: "Natureza" },
+  { key: "religion", label: "Religião" },
+  { key: "animalHandling", label: "Adestrar Animais" },
+  { key: "insight", label: "Intuição" },
+  { key: "medicine", label: "Medicina" },
+  { key: "perception", label: "Percepção" },
+  { key: "survival", label: "Sobrevivência" },
+  { key: "deception", label: "Enganação" },
+  { key: "intimidation", label: "Intimidação" },
+  { key: "performance", label: "Performance" },
+  { key: "persuasion", label: "Persuasão" },
+];
+
+function inputClass() {
+  return "w-full rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)] shadow-sm outline-none focus:border-[var(--app-border)] [color-scheme:dark]";
+}
+
+function labelClass() {
+  return "text-xs font-medium text-[var(--app-muted)]";
+}
+
+function boxClass() {
+  return "rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm";
+}
+
+function emptyAppliedBonuses(): Partial<Record<Ability, number>> {
+  return {};
+}
+
+function computeRaceBonuses(
+  raceKey: string | undefined,
+  choices: Partial<Record<Ability, boolean>> | undefined,
+): Partial<Record<Ability, number>> {
+  const race = getSrdRace(raceKey);
+  if (!race) return emptyAppliedBonuses();
+
+  const bonuses: Partial<Record<Ability, number>> = { ...race.baseBonuses };
+  if (race.choice) {
+    const picked = race.choice.allowed.filter((a) => Boolean(choices?.[a]));
+    for (const a of picked.slice(0, race.choice.picks)) {
+      bonuses[a] = (bonuses[a] ?? 0) + race.choice.bonus;
+    }
+  }
+  return bonuses;
+}
+
+function applyRaceChange(character: Character, nextRaceKey: string | undefined) {
+  const prevBonuses = character.raceAppliedBonuses ?? emptyAppliedBonuses();
+  const nextBonuses = computeRaceBonuses(nextRaceKey, (character as any).raceChoices);
+  const abilities = { ...character.abilities };
+  for (const [ability, delta] of Object.entries(prevBonuses)) {
+    abilities[ability as Ability] = Math.max(1, (abilities[ability as Ability] ?? 0) - delta);
+  }
+  for (const [ability, delta] of Object.entries(nextBonuses)) {
+    abilities[ability as Ability] = (abilities[ability as Ability] ?? 0) + delta;
+  }
+  return {
+    ...character,
+    abilities,
+    raceKey: nextRaceKey,
+    raceAppliedBonuses: nextBonuses,
+  };
+}
+
+interface UniversalCharacterSheetProps {
+  id: string;
+  isSession?: boolean;
+  sessionCode?: string;
+}
+
+export default function UniversalCharacterSheet({ id, isSession = false, sessionCode }: UniversalCharacterSheetProps) {
+  const [character, setCharacter] = useState<Character | null>(null);
+  const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const session = searchParams.get('session');
+
+  // Load character
+  useEffect(() => {
+    const loadCharacter = async () => {
+      try {
+        if (isSession && session) {
+          // Load from session
+          const { getSession } = await import("@/lib/supabase");
+          const sessionData = await getSession(session);
+          if (sessionData && sessionData.characters) {
+            const foundCharacter = sessionData.characters.find((c: Character) => c.id === id);
+            setCharacter(foundCharacter || null);
+          }
+        } else {
+          // Load from local storage
+          const loadedCharacter = await getCharacter(id);
+          setCharacter(loadedCharacter);
+        }
+      } catch (error) {
+        console.error('Error loading character:', error);
+        setCharacter(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCharacter();
+  }, [id, isSession, session]);
+
+  // Update character
+  const update = async (updates: Partial<Character>) => {
+    if (!character) return;
+
+    const updatedCharacter = { ...character, ...updates };
+    
+    try {
+      if (isSession && session) {
+        // Save to session
+        const { updateSession, getSession } = await import("@/lib/supabase");
+        const sessionData = await getSession(session);
+        if (sessionData && sessionData.characters) {
+          const updatedCharacters = sessionData.characters.map((c: Character) => 
+            c.id === id ? updatedCharacter : c
+          );
+          await updateSession(session, { characters: updatedCharacters });
+        }
+      } else {
+        // Save to local storage
+        await upsertCharacter(updatedCharacter);
+      }
+      setCharacter(updatedCharacter);
+    } catch (error) {
+      console.error('Error updating character:', error);
+    }
+  };
+
+  const pb = useMemo(() => {
+    return character?.proficiencyBonusOverride ?? proficiencyBonusFromLevel(character?.level || 1);
+  }, [character]);
+
+  const initiative = useMemo(() => {
+    if (!character) return 0;
+    const dex = abilityMod(character.abilities.dex);
+    return character.initiativeOverride ?? dex;
+  }, [character]);
+
+  const passivePerception = useMemo(() => {
+    if (!character) return 0;
+    const wis = abilityMod(character.abilities.wis);
+    const prof = character.skillProficiencies.perception ? pb : 0;
+    return 10 + wis + prof;
+  }, [character, pb]);
+
+  const calculatedAC = useMemo(() => {
+    if (!character) return 10;
+    return calculateArmorClass(
+      character.characterEquipment?.armor || null,
+      character.characterEquipment?.shield || null,
+      character.abilities.dex
+    );
+  }, [character]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="text-2xl mb-4">🎲</div>
+        <p className="text-[var(--app-muted)]">Carregando ficha...</p>
+      </div>
+    );
+  }
+
+  if (!character) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm">
+          <div className="text-sm text-[var(--app-muted)]">Personagem não encontrado.</div>
+        </div>
+        <div>
+          <Link className="text-sm font-medium underline" href={isSession && sessionCode ? `/session/${sessionCode}` : "/characters"}>
+            Voltar para {isSession ? "Sessão" : "Personagens"}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="text-xs text-[var(--app-muted)]">Ficha {isSession ? "da Sessão" : "Local"} (5e 2014)</div>
+          <h1 className="truncate text-xl font-semibold tracking-tight">{character.name || "(Sem nome)"}</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href={isSession && sessionCode ? `/session/${sessionCode}` : "/characters"}
+            className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
+          >
+            Voltar para {isSession ? "Sessão" : "Personagens"}
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="flex flex-col gap-4 lg:col-span-2">
+          <div className={boxClass()}>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div>
+                <div className={labelClass()}>Nome do personagem</div>
+                <input className={inputClass()} value={character.name} onChange={(e) => update({ name: e.target.value })} />
+              </div>
+              <div>
+                <div className={labelClass()}>Nome do jogador</div>
+                <input
+                  className={inputClass()}
+                  value={character.playerName}
+                  onChange={(e) => update({ playerName: e.target.value })}
+                />
+              </div>
+              <div>
+                <div className={labelClass()}>Classe</div>
+                <select className={inputClass()} value={character.classKey} onChange={(e) => update({ classKey: e.target.value })}>
+                  <option value="">Selecione...</option>
+                  {SRD_CLASSES.map((cls) => (
+                    <option key={cls.key} value={cls.key}>
+                      {cls.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <div className={labelClass()}>Raça</div>
+                <select className={inputClass()} value={character.raceKey ?? ""} onChange={(e) => update(applyRaceChange(character, e.target.value))}>
+                  <option value="">Selecione...</option>
+                  {SRD_RACES.map((race) => (
+                    <option key={race.key} value={race.key}>
+                      {race.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <div className={labelClass()}>Nível</div>
+                <input className={inputClass()} type="number" min="1" max="20" value={character.level} onChange={(e) => update({ level: Number(e.target.value) })} />
+              </div>
+              <div>
+                <div className={labelClass()}>Antecedente</div>
+                <input className={inputClass()} value={character.background} onChange={(e) => update({ background: e.target.value })} />
+              </div>
+            </div>
+          </div>
+
+          <div className={boxClass()}>
+            <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3">Atributos</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {ABILITIES.map((ability) => (
+                <div key={ability.key} className="text-center">
+                  <div className="text-lg font-bold text-[var(--app-fg)]">{character.abilities[ability.key]}</div>
+                  <div className="text-xs text-[var(--app-muted)]">{ability.label}</div>
+                  <div className="text-sm font-medium text-purple-500">{formatSigned(abilityMod(character.abilities[ability.key]))}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={boxClass()}>
+            <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3">Perícias</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {SKILLS.map((skill) => (
+                <div key={skill.key} className="flex items-center justify-between p-2 border border-[var(--app-border)] rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={character.skillProficiencies[skill.key] || false}
+                      onChange={(e) => update({
+                        skillProficiencies: {
+                          ...character.skillProficiencies,
+                          [skill.key]: e.target.checked
+                        }
+                      })}
+                      className="rounded border-[var(--app-border)] bg-[var(--app-surface)]"
+                    />
+                    <span className="text-sm text-[var(--app-fg)]">{skill.label}</span>
+                  </div>
+                  <div className="text-sm font-medium text-purple-500">
+                    {formatSigned(abilityMod(character.abilities[SKILL_TO_ABILITY[skill.key]]) + (character.skillProficiencies[skill.key] ? pb : 0))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={boxClass()}>
+            <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3">Combat</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <div className={labelClass()}>Pontos de Vida</div>
+                <input className={inputClass()} type="number" value={character.maxHp} onChange={(e) => update({ maxHp: Number(e.target.value) })} />
+              </div>
+              <div>
+                <div className={labelClass()}>PV Atuais</div>
+                <input className={inputClass()} type="number" value={character.currentHp} onChange={(e) => update({ currentHp: Number(e.target.value) })} />
+              </div>
+              <div>
+                <div className={labelClass()}>PV Temporários</div>
+                <input className={inputClass()} type="number" value={character.tempHp} onChange={(e) => update({ tempHp: Number(e.target.value) })} />
+              </div>
+              <div>
+                <div className={labelClass()}>Classe de Armadura</div>
+                <input
+                  className={inputClass()}
+                  type="number"
+                  value={calculatedAC}
+                  onChange={(e) => update({ armorClass: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className={boxClass()}>
+            <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3">Outros Valores</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <div className={labelClass()}>Iniciativa</div>
+                <input className={inputClass()} type="number" value={initiative} onChange={(e) => update({ initiativeOverride: Number(e.target.value) })} />
+              </div>
+              <div>
+                <div className={labelClass()}>Bônus de Proficiência</div>
+                <input className={inputClass()} type="number" value={pb} onChange={(e) => update({ proficiencyBonusOverride: Number(e.target.value) })} />
+              </div>
+              <div>
+                <div className={labelClass()}>Percepção Passiva</div>
+                <input
+                  className={inputClass()}
+                  type="number"
+                  value={passivePerception}
+                  onChange={(e) => update({ armorClass: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <div className={labelClass()}>Velocidade</div>
+                <input className={inputClass()} type="number" value={character.speed} onChange={(e) => update({ speed: Number(e.target.value) })} />
+              </div>
+            </div>
+          </div>
+
+          <CharacterEquipment 
+            character={character} 
+            onUpdate={(equipment) => update({ characterEquipment: equipment })} 
+          />
+          <UniversalCharacterSpells 
+            character={character} 
+            onUpdate={(spells: CharacterSpellsState) => update({ characterSpells: spells })} 
+            isSession={isSession}
+          />
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div className={boxClass()}>
+            <h3 className="text-lg font-semibold mb-4">Resumo</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">PV</span>
+                <span>{character.currentHp}/{character.maxHp}</span>
+              </div>
+              {character.tempHp > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-[var(--app-muted)]">PV Temporários</span>
+                  <span>+{character.tempHp}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">CA</span>
+                <span>{calculatedAC}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">Iniciativa</span>
+                <span>{formatSigned(initiative)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">Velocidade</span>
+                <span>{character.speed} pés</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">Proficiência</span>
+                <span>{formatSigned(pb)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">Percepção Passiva</span>
+                <span>{passivePerception}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className={boxClass()}>
+            <h3 className="text-lg font-semibold mb-4">Salvaguardas</h3>
+            <div className="space-y-2">
+              {ABILITIES.map((ability) => (
+                <div key={ability.key} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={character.savingThrowProficiencies[ability.key] || false}
+                      onChange={(e) => update({
+                        savingThrowProficiencies: {
+                          ...character.savingThrowProficiencies,
+                          [ability.key]: e.target.checked
+                        }
+                      })}
+                      className="rounded border-[var(--app-border)] bg-[var(--app-surface)]"
+                    />
+                    <span className="text-sm text-[var(--app-fg)]">{ability.label}</span>
+                  </div>
+                  <div className="text-sm font-medium text-purple-500">
+                    {formatSigned(abilityMod(character.abilities[ability.key]) + (character.savingThrowProficiencies[ability.key] ? pb : 0))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={boxClass()}>
+            <h3 className="text-lg font-semibold mb-4">Ataques e Magias</h3>
+            <div className="space-y-2 text-sm">
+              <div className="text-[var(--app-muted)]">Ataques e magias serão implementados aqui</div>
+            </div>
+          </div>
+
+          <div className={boxClass()}>
+            <h3 className="text-lg font-semibold mb-4">Equipamento</h3>
+            <div className="space-y-2 text-sm">
+              <div className="text-[var(--app-muted)]">Equipamento será implementado aqui</div>
+            </div>
+          </div>
+
+          <div className={boxClass()}>
+            <h3 className="text-lg font-semibold mb-4">Traços e Habilidades</h3>
+            <div className="space-y-2 text-sm">
+              <div className="text-[var(--app-muted)]">Traços e habilidades serão implementados aqui</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
