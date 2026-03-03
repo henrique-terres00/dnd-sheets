@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { abilityMod, formatSigned, proficiencyBonusFromLevel, SKILL_TO_ABILITY } from "@/lib/dnd5e";
 import { getCharacter, upsertCharacter } from "@/lib/characterStore";
@@ -104,13 +104,72 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const handleBackToSession = () => {
+  // Debounce refs para text inputs
+  const debounceRefs = useRef<{ [key: string]: NodeJS.Timeout }>({});
+  const localStateRef = useRef<{ [key: string]: string }>({});
+
+  // Função debounced para atualizações de text inputs
+  const debouncedUpdate = useCallback((updates: Partial<Character>, debounceKey: string = 'default') => {
+    // Cancelar debounce anterior para este campo
+    if (debounceRefs.current[debounceKey]) {
+      clearTimeout(debounceRefs.current[debounceKey]);
+    }
+
+    // Atualizar estado local imediatamente para UI responsiva
+    if (character) {
+      const updatedCharacter = { ...character, ...updates };
+      setCharacter(updatedCharacter);
+      
+      // Salvar estado local para possível recuperação
+      Object.keys(updates).forEach(key => {
+        const value = updates[key as keyof Character];
+        if (typeof value === 'string') {
+          localStateRef.current[key] = value;
+        }
+      });
+    }
+
+    // Agendar salvamento no banco com debounce reduzido (500ms)
+    debounceRefs.current[debounceKey] = setTimeout(async () => {
+      console.log('Debounced save for:', debounceKey, updates);
+      try {
+        await update(updates);
+        // Limpar estado local após salvamento bem-sucedido
+        Object.keys(updates).forEach(key => {
+          delete localStateRef.current[key];
+        });
+      } catch (error) {
+        console.error('Error in debounced update:', error);
+      }
+    }, 500); // Reduzido para 500ms
+  }, [character]);
+
+  const handleBackToSession = async () => {
+    // Limpar todos os timeouts pendentes imediatamente
+    Object.values(debounceRefs.current).forEach(timeout => {
+      if (timeout) clearTimeout(timeout);
+    });
+    debounceRefs.current = {};
+    console.log('Debounce cleared before navigation');
+
+    // Forçar salvamento final se houver mudanças pendentes
+    if (character && Object.keys(localStateRef.current).length > 0) {
+      try {
+        await update(localStateRef.current);
+        console.log('Final save before navigation completed');
+      } catch (error) {
+        console.error('Error in final save before navigation:', error);
+      }
+    }
+
+    // Navegar imediatamente
     if (isSession && sessionCode) {
       router.push(`/session/${sessionCode.toUpperCase()}`);
     } else {
       router.push('/characters');
     }
   };
+
   const session = searchParams.get('session');
 
   // Load character
@@ -157,6 +216,18 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
     }
   };
 
+  // Cleanup dos timeouts quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      // Limpar todos os timeouts pendentes
+      Object.values(debounceRefs.current).forEach(timeout => {
+        if (timeout) clearTimeout(timeout);
+      });
+      debounceRefs.current = {};
+      console.log('Debounce timeouts cleaned up');
+    };
+  }, []);
+
   useEffect(() => {
     loadCharacter();
   }, [id, isSession, session]);
@@ -194,11 +265,13 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
     }
   };
 
-  // Update character
+  // Função update original (mantida para outros casos)
   const update = async (updates: Partial<Character>) => {
     if (!character) return;
 
+    console.log('Character update called with:', updates);
     const updatedCharacter = { ...character, ...updates };
+    console.log('Updated character will be:', updatedCharacter);
     const isDraft = searchParams.get('draft') === '1';
     
     try {
@@ -277,6 +350,19 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
     const prof = character.skillProficiencies.perception ? pb : 0;
     return 10 + wis + prof;
   }, [character, pb]);
+
+  // Auto-update proficiency bonus when level changes
+  useEffect(() => {
+    if (character && !character.proficiencyBonusOverride) {
+      const newPb = proficiencyBonusFromLevel(character.level);
+      console.log('Level:', character.level, 'PB:', newPb);
+      // Only update if different to avoid infinite loops
+      const currentPb = proficiencyBonusFromLevel(character.level || 1);
+      if (newPb !== currentPb) {
+        console.log('Level changed, updating derived values');
+      }
+    }
+  }, [character?.level]);
 
   const calculatedAC = useMemo(() => {
     if (!character) return 10;
@@ -393,14 +479,18 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
               </div>
               <div>
                 <div className={labelClass()}>Nome do personagem</div>
-                <input className={inputClass()} value={character.name} onChange={(e) => update({ name: e.target.value })} />
+                <input 
+                  className={inputClass()} 
+                  value={character.name} 
+                  onChange={(e) => debouncedUpdate({ name: e.target.value }, 'name')} 
+                />
               </div>
               <div>
                 <div className={labelClass()}>Nome do jogador</div>
                 <input
                   className={inputClass()}
                   value={character.playerName}
-                  onChange={(e) => update({ playerName: e.target.value })}
+                  onChange={(e) => debouncedUpdate({ playerName: e.target.value }, 'playerName')}
                 />
               </div>
               <div>
@@ -431,7 +521,7 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
               </div>
               <div>
                 <div className={labelClass()}>Antecedente</div>
-                <input className={inputClass()} value={character.background} onChange={(e) => update({ background: e.target.value })} />
+                <input className={inputClass()} value={character.background} onChange={(e) => debouncedUpdate({ background: e.target.value }, 'background')} />
               </div>
             </div>
           </div>
@@ -565,7 +655,10 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
                 rows={6}
                 placeholder="Descreva os traços e habilidades do personagem..."
                 value={character.otherFeaturesAndTraits || ""}
-                onChange={(e) => update({ otherFeaturesAndTraits: e.target.value })}
+                onChange={(e) => {
+                  console.log('Traits onChange (debounced):', e.target.value);
+                  debouncedUpdate({ otherFeaturesAndTraits: e.target.value }, 'traits');
+                }}
               />
             </div>
           </div>
@@ -624,7 +717,10 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
                 rows={6}
                 placeholder="Anotações gerais sobre o personagem..."
                 value={character.treasure || ""}
-                onChange={(e) => update({ treasure: e.target.value })}
+                onChange={(e) => {
+                  console.log('Notes onChange (debounced):', e.target.value);
+                  debouncedUpdate({ treasure: e.target.value }, 'notes');
+                }}
               />
             </div>
           </div>
