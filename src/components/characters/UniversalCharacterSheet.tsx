@@ -254,7 +254,7 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
                       <div className="w-24 h-24 rounded-lg border-2 border-dashed border-[var(--app-border)] flex items-center justify-center text-center">
                         <span className="text-[var(--app-muted)] text-xs">Sem imagem</span>
                       </div>
-                      <label className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-hover)] cursor-pointer">
+                      <label className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)] cursor-pointer">
                         Escolher arquivo
                         <input
                           type="file"
@@ -322,11 +322,11 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           </div>
 
           <div className={boxClass()}>
-            <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3">Atributos</h3>
+            <h3 className="text-lg font-semibold mb-4">Atributos</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {ABILITIES.map((ability) => (
                 <div key={ability.key} className="text-center">
-                  <div className="text-lg font-bold text-[var(--app-fg)]">{character.abilities[ability.key]}</div>
+                  <div className="text-xl font-bold text-[var(--app-fg)]">{character.abilities[ability.key]}</div>
                   <div className="text-xs text-[var(--app-muted)]">{ability.label}</div>
                   <div className="text-sm font-medium text-purple-500">{formatSigned(abilityMod(character.abilities[ability.key]))}</div>
                 </div>
@@ -335,7 +335,7 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           </div>
 
           <div className={boxClass()}>
-            <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3">Perícias</h3>
+            <h3 className="text-lg font-semibold mb-4">Perícias</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {SKILLS.map((skill) => (
                 <div key={skill.key} className="flex items-center justify-between p-2 border border-[var(--app-border)] rounded-lg">
@@ -362,7 +362,7 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           </div>
 
           <div className={boxClass()}>
-            <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3">Combat</h3>
+            <h3 className="text-lg font-semibold mb-4">Combat</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <div className={labelClass()}>Pontos de Vida</div>
@@ -389,7 +389,7 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           </div>
 
           <div className={boxClass()}>
-            <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3">Outros Valores</h3>
+            <h3 className="text-lg font-semibold mb-4">Outros Valores</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <div className={labelClass()}>Iniciativa</div>
@@ -405,59 +405,12 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
                   className={inputClass()}
                   type="number"
                   value={passivePerception}
-                  onChange={(e) => update({ armorClass: Number(e.target.value) })}
+                  readOnly
                 />
               </div>
               <div>
                 <div className={labelClass()}>Velocidade</div>
                 <input className={inputClass()} type="number" value={character.speed} onChange={(e) => update({ speed: Number(e.target.value) })} />
-              </div>
-            </div>
-          </div>
-
-          <CharacterEquipment 
-            character={character} 
-            onUpdate={(equipment) => update({ characterEquipment: equipment })} 
-          />
-          <UniversalCharacterSpells 
-            character={character} 
-            onUpdate={(spells: CharacterSpellsState) => update({ characterSpells: spells })} 
-          />
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <div className={boxClass()}>
-            <h3 className="text-lg font-semibold mb-4">Resumo</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-[var(--app-muted)]">PV</span>
-                <span>{character.currentHp}/{character.maxHp}</span>
-              </div>
-              {character.tempHp > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-[var(--app-muted)]">PV Temporários</span>
-                  <span>+{character.tempHp}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-[var(--app-muted)]">CA</span>
-                <span>{calculatedAC}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--app-muted)]">Iniciativa</span>
-                <span>{formatSigned(initiative)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--app-muted)]">Velocidade</span>
-                <span>{character.speed} pés</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--app-muted)]">Proficiência</span>
-                <span>{formatSigned(pb)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--app-muted)]">Percepção Passiva</span>
-                <span>{passivePerception}</span>
               </div>
             </div>
           </div>
@@ -490,23 +443,74 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           </div>
 
           <div className={boxClass()}>
-            <h3 className="text-lg font-semibold mb-4">Ataques e Magias</h3>
-            <div className="space-y-2 text-sm">
-              <div className="text-[var(--app-muted)]">Ataques e magias serão implementados aqui</div>
-            </div>
-          </div>
-
-          <div className={boxClass()}>
-            <h3 className="text-lg font-semibold mb-4">Equipamento</h3>
-            <div className="space-y-2 text-sm">
-              <div className="text-[var(--app-muted)]">Equipamento será implementado aqui</div>
-            </div>
-          </div>
-
-          <div className={boxClass()}>
             <h3 className="text-lg font-semibold mb-4">Traços e Habilidades</h3>
+            <div className="space-y-2">
+              <textarea
+                className={inputClass()}
+                rows={6}
+                placeholder="Descreva os traços e habilidades do personagem..."
+                value={character.otherFeaturesAndTraits || ""}
+                onChange={(e) => update({ otherFeaturesAndTraits: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className={boxClass()}>
+            <h3 className="text-lg font-semibold mb-4">Resumo</h3>
             <div className="space-y-2 text-sm">
-              <div className="text-[var(--app-muted)]">Traços e habilidades serão implementados aqui</div>
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">PV</span>
+                <span className="text-[var(--app-fg)]">{character.currentHp}/{character.maxHp}</span>
+              </div>
+              {character.tempHp > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-[var(--app-muted)]">PV Temporários</span>
+                  <span className="text-[var(--app-fg)]">+{character.tempHp}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">CA</span>
+                <span className="text-[var(--app-fg)]">{calculatedAC}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">Iniciativa</span>
+                <span className="text-[var(--app-fg)]">{formatSigned(initiative)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">Velocidade</span>
+                <span className="text-[var(--app-fg)]">{character.speed} pés</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">Proficiência</span>
+                <span className="text-[var(--app-fg)]">{formatSigned(pb)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--app-muted)]">Percepção Passiva</span>
+                <span className="text-[var(--app-fg)]">{passivePerception}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <CharacterEquipment 
+            character={character} 
+            onUpdate={(equipment) => update({ characterEquipment: equipment })} 
+          />
+          <UniversalCharacterSpells 
+            character={character} 
+            onUpdate={(spells: CharacterSpellsState) => update({ characterSpells: spells })} 
+          />
+          <div className={boxClass()}>
+            <h3 className="text-lg font-semibold mb-4">Anotações</h3>
+            <div className="space-y-2">
+              <textarea
+                className={inputClass()}
+                rows={6}
+                placeholder="Anotações gerais sobre o personagem..."
+                value={character.treasure || ""}
+                onChange={(e) => update({ treasure: e.target.value })}
+              />
             </div>
           </div>
         </div>
