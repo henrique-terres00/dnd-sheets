@@ -8,6 +8,7 @@ import { getSrdClass, getSrdRace, SRD_CLASSES, SRD_RACES } from "@/lib/srd";
 import { CharacterEquipment } from "@/components/equipment/CharacterEquipment";
 import { UniversalCharacterSpells } from "@/components/spells/UniversalCharacterSpells";
 import { calculateArmorClass } from "@/lib/equipmentUtils";
+import { getSession, updateSession } from "@/lib/supabase";
 import type { CharacterSpellsState } from "@/lib/spells";
 import type { Ability, Character, Skill } from "@/lib/types";
 
@@ -131,7 +132,6 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
 
     // Agendar salvamento no banco com debounce reduzido (500ms)
     debounceRefs.current[debounceKey] = setTimeout(async () => {
-      console.log('Debounced save for:', debounceKey, updates);
       try {
         await update(updates);
         // Limpar estado local após salvamento bem-sucedido
@@ -150,13 +150,11 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
       if (timeout) clearTimeout(timeout);
     });
     debounceRefs.current = {};
-    console.log('Debounce cleared before navigation');
 
     // Forçar salvamento final se houver mudanças pendentes
     if (character && Object.keys(localStateRef.current).length > 0) {
       try {
         await update(localStateRef.current);
-        console.log('Final save before navigation completed');
       } catch (error) {
         console.error('Error in final save before navigation:', error);
       }
@@ -172,7 +170,7 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
 
   const session = searchParams.get('session');
 
-  // Load character
+  // Load character otimizado - sem imports dinâmicos
   const loadCharacter = async () => {
     try {
       // Check if this is a draft character
@@ -196,8 +194,7 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           setCharacter(loadedCharacter);
         }
       } else if (isSession && session) {
-        // Load from session
-        const { getSession } = await import("@/lib/supabase");
+        // Load from session - sem import dinâmico
         const sessionData = await getSession(session);
         if (sessionData && sessionData.characters) {
           const foundCharacter = sessionData.characters.find((c: Character) => c.id === id);
@@ -228,16 +225,18 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
     };
   }, []);
 
+  // useEffect otimizado - carregar apenas quando necessário
   useEffect(() => {
     loadCharacter();
-  }, [id, isSession, session]);
+  }, [id, isSession, session]); // Dependências específicas
 
-  // Reload character when searchParams change (for drafts)
+  // useEffect otimizado para drafts - evitar múltiplas chamadas
   useEffect(() => {
-    if (searchParams.get('draft') === '1') {
+    const isDraft = searchParams.get('draft') === '1';
+    if (isDraft && !isSession) {
       loadCharacter();
     }
-  }, [searchParams]);
+  }, [searchParams.get('draft')]); // Apenas o draft mudou
 
   // Save draft character as permanent
   const saveDraftAsCharacter = async () => {
@@ -265,13 +264,11 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
     }
   };
 
-  // Função update original (mantida para outros casos)
+  // Função update otimizada - sem chamadas redundantes
   const update = async (updates: Partial<Character>) => {
     if (!character) return;
 
-    console.log('Character update called with:', updates);
     const updatedCharacter = { ...character, ...updates };
-    console.log('Updated character will be:', updatedCharacter);
     const isDraft = searchParams.get('draft') === '1';
     
     try {
@@ -283,8 +280,7 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           console.error('Failed to save draft to sessionStorage:', sessionError);
         }
       } else if (isSession && session) {
-        // Save to session
-        const { updateSession, getSession } = await import("@/lib/supabase");
+        // Save to session APENAS UMA VEZ
         const sessionData = await getSession(session);
         if (sessionData && sessionData.characters) {
           const updatedCharacters = sessionData.characters.map((c: Character) => 
@@ -292,41 +288,9 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           );
           await updateSession(session, { characters: updatedCharacters });
         }
-
-        // Also update the original local character if it exists
-        try {
-          const originalCharacter = await getCharacter(id);
-          if (originalCharacter) {
-            await upsertCharacter(updatedCharacter);
-          }
-        } catch (localError) {
-          // Local character might not exist, that's ok
-          console.log('Local character not found, only session updated');
-        }
       } else {
-        // Save to local storage
+        // Save to local storage APENAS UMA VEZ
         await upsertCharacter(updatedCharacter);
-
-        // Also update in any active sessions if this character is imported there
-        try {
-          const currentSession = localStorage.getItem('currentSession');
-          if (currentSession) {
-            const { getSession, updateSession } = await import("@/lib/supabase");
-            const sessionData = await getSession(currentSession);
-            if (sessionData && sessionData.characters) {
-              const characterInSession = sessionData.characters.find((c: Character) => c.id === id);
-              if (characterInSession) {
-                const updatedCharacters = sessionData.characters.map((c: Character) => 
-                  c.id === id ? updatedCharacter : c
-                );
-                await updateSession(currentSession, { characters: updatedCharacters });
-                console.log('Character also updated in active session');
-              }
-            }
-          }
-        } catch (sessionError) {
-          console.log('Session update failed, local character updated');
-        }
       }
       setCharacter(updatedCharacter);
     } catch (error) {
