@@ -6,8 +6,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getCharacter, listCharacters } from "@/lib/characterStore";
 import type { Character } from "@/lib/types";
-import { UniversalDiceRoller } from "@/components/dice/UniversalDiceRoller";
-import { InlineRollLog } from "@/components/dice/InlineRollLog";
 
 type TokenKind = "elf" | "dwarf" | "orc" | "dragon" | "goblin" | "skeleton";
 
@@ -217,7 +215,6 @@ export default function MapClient() {
   const [selectedEnemyId, setSelectedEnemyId] = useState<string>("");
   const [newEnemyName, setNewEnemyName] = useState<string>("");
   const [newEnemyImageDataUrl, setNewEnemyImageDataUrl] = useState<string>("");
-  const [isDiceRollerOpen, setIsDiceRollerOpen] = useState<boolean>(false);
 
   const isCreatingEnemy = selectedEnemyId === "__new__";
 
@@ -587,17 +584,6 @@ export default function MapClient() {
         </div>
       </div>
 
-      {/* Dice Roller */}
-      <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
-        <button
-          className="rounded-xl border border-[var(--app-border)] bg-purple-500/20 px-4 py-3 text-sm font-medium text-[var(--app-fg)] hover:bg-purple-500/30"
-          onClick={() => setIsDiceRollerOpen(true)}
-          type="button"
-        >
-          🎲 Rolagem de Dados
-        </button>
-        <InlineRollLog />
-      </div>
 
       <div className="relative">
         {/* Zoom Controls - Outside map container */}
@@ -704,9 +690,6 @@ export default function MapClient() {
       </div>
           </div>
       </div>
-      
-      {/* Dice Roller Popup */}
-      <UniversalDiceRoller isOpen={isDiceRollerOpen} onClose={() => setIsDiceRollerOpen(false)} characters={characters} isSession={false} />
     </div>
   );
 }

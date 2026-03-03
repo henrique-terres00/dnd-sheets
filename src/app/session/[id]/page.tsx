@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase, subscribeToSession, createSession, getSession, updateSession, addCharacterToSession, addRollToSession, deleteSession } from "@/lib/supabase";
 import { UniversalDiceRoller } from "@/components/dice/UniversalDiceRoller";
 import { SessionSpellCaster } from "@/components/spells/SessionSpellCaster";
+import MapClient from "@/components/map/MapClient";
 // Import formatRollMessage for consistent display
 import { formatRollMessage } from "@/lib/rollLog";
 import { getCharacter, listCharacters } from "@/lib/characterStore";
@@ -367,23 +368,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         )}
 
         {activeTab === 'map' && (
-          <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-[var(--app-fg)]">🗺️ Mapa da Campanha</h2>
-              <Link 
-                href="/map"
-                className="px-3 py-1 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
-              >
-                Abrir Mapa
-              </Link>
-            </div>
-            
-            <div className="text-center py-8 text-[var(--app-muted)]">
-              <div className="text-4xl mb-2">🗺️</div>
-              <p className="text-sm">Mapa interativo disponível</p>
-              <p className="text-xs mt-1">Clique em "Abrir Mapa" para acessar o mapa compartilhado</p>
-            </div>
-          </div>
+          <MapClient />
         )}
 
         {activeTab === 'rolls' && (
@@ -408,7 +393,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                   disabled={!session?.rolls || session.rolls.length === 0}
                   className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--app-border)] bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  🗑️ Limpar
+                  Limpar log
                 </button>
               </div>
             </div>
@@ -449,7 +434,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         isOpen={isDiceRollerOpen}
         onClose={() => setIsDiceRollerOpen(false)}
         characters={[...(session?.characters || []), ...localCharacters]}
-        isSession={true}
       />
 
       {/* Spell Caster Modal */}

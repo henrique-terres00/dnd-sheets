@@ -377,7 +377,6 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           <UniversalCharacterSpells 
             character={character} 
             onUpdate={(spells: CharacterSpellsState) => update({ characterSpells: spells })} 
-            isSession={isSession}
           />
         </div>
 

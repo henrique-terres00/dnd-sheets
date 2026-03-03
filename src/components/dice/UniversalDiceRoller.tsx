@@ -9,7 +9,6 @@ import {
   rollInitiative,
   type RollResult 
 } from "@/lib/dice";
-import { addRollToLog } from "@/lib/rollLog";
 import { addRollToSession } from "@/lib/supabase";
 import { calculateArmorClass } from "@/lib/equipmentUtils";
 import type { Character } from "@/lib/types";
@@ -19,10 +18,9 @@ interface UniversalDiceRollerProps {
   isOpen: boolean;
   onClose: () => void;
   characters: Character[];
-  isSession?: boolean; // Se true, salva na sessão; se false, salva local
 }
 
-export function UniversalDiceRoller({ isOpen, onClose, characters, isSession = false }: UniversalDiceRollerProps) {
+export function UniversalDiceRoller({ isOpen, onClose, characters }: UniversalDiceRollerProps) {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>("");
   const [selectedSkill, setSelectedSkill] = useState<string>("");
   const [selectedAbility, setSelectedAbility] = useState<string>("");
@@ -81,7 +79,7 @@ export function UniversalDiceRoller({ isOpen, onClose, characters, isSession = f
     { key: "persuasion", label: "Persuasão", ability: "cha" }
   ];
 
-  // Function to create and register a roll (session or local based on isSession)
+  // Function to create and register a roll (always saves to session)
   const createRoll = async (type: DiceRoll['type'], label: string, result: RollResult) => {
     if (!selectedCharacter) return;
 
@@ -99,20 +97,14 @@ export function UniversalDiceRoller({ isOpen, onClose, characters, isSession = f
       critical: result.critical
     };
 
-    // Save to appropriate location based on isSession
-    if (isSession) {
-      // Save to session (synchronized for all users)
-      const currentSession = localStorage.getItem('currentSession');
-      if (currentSession) {
-        try {
-          await addRollToSession(currentSession, roll);
-        } catch (error) {
-          console.error('Error adding roll to session:', error);
-        }
+    // Always save to session (synchronized for all users)
+    const currentSession = localStorage.getItem('currentSession');
+    if (currentSession) {
+      try {
+        await addRollToSession(currentSession, roll);
+      } catch (error) {
+        console.error('Error adding roll to session:', error);
       }
-    } else {
-      // Save to local log
-      addRollToLog(roll);
     }
 
     setLastRoll(result);

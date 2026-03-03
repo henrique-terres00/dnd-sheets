@@ -7,17 +7,15 @@ import { DEFAULT_SPELLS, getSpellsByClass, getCantripsByClass } from "@/lib/defa
 import { castSpell, calculateSpellcastingAbility, calculateSpellSlots, type SpellTarget } from "@/lib/spellcasting";
 import { proficiencyBonusFromLevel } from "@/lib/dnd5e";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { addRollToLog } from "@/lib/rollLog";
 import { addRollToSession } from "@/lib/supabase";
 import type { DiceRoll } from "@/lib/rollLog";
 
 interface UniversalCharacterSpellsProps {
   character: Character;
   onUpdate: (spells: CharacterSpellsState) => void;
-  isSession?: boolean; // Se true, salva na sessão; se false, salva local
 }
 
-export function UniversalCharacterSpells({ character, onUpdate, isSession = false }: UniversalCharacterSpellsProps) {
+export function UniversalCharacterSpells({ character, onUpdate }: UniversalCharacterSpellsProps) {
   const [activeTab, setActiveTab] = useState<'spells' | 'cantrips' | 'slots'>('spells');
   const [castResults, setCastResults] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,20 +117,14 @@ export function UniversalCharacterSpells({ character, onUpdate, isSession = fals
       timestamp: new Date()
     };
 
-    // Save to appropriate location based on isSession
-    if (isSession) {
-      // Save to session (synchronized for all users)
-      const currentSession = localStorage.getItem('currentSession');
-      if (currentSession) {
-        try {
-          await addRollToSession(currentSession, roll);
-        } catch (error) {
-          console.error('Error adding spell roll to session:', error);
-        }
+    // Always save to session (synchronized for all users)
+    const currentSession = localStorage.getItem('currentSession');
+    if (currentSession) {
+      try {
+        await addRollToSession(currentSession, roll);
+      } catch (error) {
+        console.error('Error adding spell roll to session:', error);
       }
-    } else {
-      // Save to local log
-      addRollToLog(roll);
     }
 
     // Add to cast results
