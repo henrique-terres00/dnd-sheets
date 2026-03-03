@@ -30,8 +30,9 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
   const selectedCharacter = allCharacters.find(c => c.id === selectedCharacterId);
   const characterSpells = selectedCharacter?.characterSpells;
 
-  // Get available spells for selected character
-  const availableSpells = characterSpells?.spells || [];
+  // Get available spells for selected character (only prepared ones)
+  const availableSpells = characterSpells?.spells.filter(spell => spell.prepared) || [];
+  const availableCantrips = characterSpells?.cantrips.filter(cantrip => cantrip.prepared) || [];
 
   // Check if character has available spell slots
   const hasAvailableSlot = (level: number) => {
@@ -229,55 +230,93 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
         {selectedCharacter && (
           <div className="mb-4">
             <label className="block text-sm font-medium text-[var(--app-fg)] mb-2">
-              Magias Conhecidas
+              Magias Preparadas
             </label>
             <div className="grid gap-2 max-h-64 overflow-y-auto">
-              {availableSpells.length === 0 ? (
+              {availableSpells.length === 0 && availableCantrips.length === 0 ? (
                 <div className="text-center py-4 text-[var(--app-muted)]">
-                  <p className="text-sm">Nenhuma magia conhecida</p>
+                  <p className="text-sm">Nenhuma magia preparada</p>
+                  <p className="text-xs mt-1">Prepare magias na ficha do personagem primeiro</p>
                 </div>
               ) : (
-                availableSpells.map((spell: Spell) => {
-                  const canCast = hasAvailableSlot(spell.level);
-                  return (
+                <>
+                  {availableSpells.map((spell: Spell) => {
+                    const canCast = hasAvailableSlot(spell.level);
+                    return (
+                      <div
+                        key={spell.id}
+                        className={`border rounded-lg p-3 transition-colors ${
+                          selectedSpell?.id === spell.id
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : 'border-[var(--app-border)] bg-[var(--app-bg)]'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="font-medium text-[var(--app-fg)]">{spell.name}</div>
+                            <div className="text-sm text-[var(--app-muted)]">
+                              {spell.level}º círculo • {spell.school}
+                            </div>
+                            <div className="text-sm text-purple-400">
+                              Tempo: {spell.castingTime} • Alcance: {spell.range}
+                            </div>
+                            {spell.description && (
+                              <div className="text-xs text-[var(--app-muted)] mt-1">
+                                {spell.description}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => canCast && castSpell(spell)}
+                            disabled={!canCast || isCasting}
+                            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                              canCast
+                                ? 'bg-purple-500 text-white hover:bg-purple-600'
+                                : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                            } ${isCasting ? 'opacity-50' : ''}`}
+                          >
+                            {canCast ? `Lançar (${getSlotText(spell.level)})` : 'Sem slots'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {availableCantrips.map((cantrip: Spell) => (
                     <div
-                      key={spell.id}
+                      key={cantrip.id}
                       className={`border rounded-lg p-3 transition-colors ${
-                        selectedSpell?.id === spell.id
-                          ? 'border-purple-500 bg-purple-500/10'
+                        selectedSpell?.id === cantrip.id
+                          ? 'border-blue-500 bg-blue-500/10'
                           : 'border-[var(--app-border)] bg-[var(--app-bg)]'
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <div className="font-medium text-[var(--app-fg)]">{spell.name}</div>
+                          <div className="font-medium text-[var(--app-fg)]">{cantrip.name}</div>
                           <div className="text-sm text-[var(--app-muted)]">
-                            {spell.level}º círculo • {spell.school}
+                            Truque • {cantrip.school}
                           </div>
-                          <div className="text-sm text-purple-400">
-                            Tempo: {spell.castingTime} • Alcance: {spell.range}
+                          <div className="text-sm text-blue-400">
+                            Tempo: {cantrip.castingTime} • Alcance: {cantrip.range}
                           </div>
-                          {spell.description && (
+                          {cantrip.description && (
                             <div className="text-xs text-[var(--app-muted)] mt-1">
-                              {spell.description}
+                              {cantrip.description}
                             </div>
                           )}
                         </div>
                         <button
-                          onClick={() => canCast && castSpell(spell)}
-                          disabled={!canCast || isCasting}
-                          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                            canCast
-                              ? 'bg-purple-500 text-white hover:bg-purple-600'
-                              : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                          } ${isCasting ? 'opacity-50' : ''}`}
+                          onClick={() => castSpell(cantrip)}
+                          disabled={isCasting}
+                          className={`px-3 py-1 rounded text-sm font-medium transition-colors bg-blue-500 text-white hover:bg-blue-600 ${isCasting ? 'opacity-50' : ''}`}
                         >
-                          {canCast ? `Lançar (${getSlotText(spell.level)})` : 'Sem slots'}
+                          Lançar
                         </button>
                       </div>
                     </div>
-                  );
-                })
+                  ))}
+                </>
               )}
             </div>
           </div>

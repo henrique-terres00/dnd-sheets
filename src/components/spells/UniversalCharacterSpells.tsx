@@ -4,11 +4,9 @@ import { useState, useEffect } from "react";
 import type { Character } from "@/lib/types";
 import type { Spell, SpellSlot, CharacterSpellsState } from "@/lib/spells";
 import { getSpellsByClass, getCantripsByClass } from "@/lib/defaultSpells";
-import { castSpell, calculateSpellcastingAbility, calculateSpellSlots, type SpellTarget } from "@/lib/spellcasting";
+import { calculateSpellcastingAbility, calculateSpellSlots } from "@/lib/spellcasting";
 import { proficiencyBonusFromLevel } from "@/lib/dnd5e";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { addRollToSession } from "@/lib/supabase";
-import type { DiceRoll } from "@/lib/rollLog";
 
 interface UniversalCharacterSpellsProps {
   character: Character;
@@ -17,7 +15,6 @@ interface UniversalCharacterSpellsProps {
 
 export function UniversalCharacterSpells({ character, onUpdate }: UniversalCharacterSpellsProps) {
   const [activeTab, setActiveTab] = useState<"spells" | "cantrips" | "slots">("spells");
-  const [castResults, setCastResults] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [cantripSearchTerm, setCantripSearchTerm] = useState("");
 
@@ -86,64 +83,22 @@ export function UniversalCharacterSpells({ character, onUpdate }: UniversalChara
     onUpdate(state);
   };
 
-  const castSpellAction = async (spell: Spell, targets: SpellTarget[] = []) => {
-    // Check if spell slot is available
-    if (spell.level > 0) {
-      const slot = spellSlots.find((s) => s.level === spell.level);
-      if (!slot || slot.used >= slot.total) {
-        alert(`Sem espaços de magia de nível ${spell.level} disponíveis!`);
-        return;
-      }
-    }
+  // Toggle spell preparation
+  const toggleSpellPreparation = (spellId: string) => {
+    const updatedSpells = spells.map((spell) =>
+      spell.id === spellId ? { ...spell, prepared: !spell.prepared } : spell
+    );
+    setSpells(updatedSpells);
+    saveSpellsState(updatedSpells, cantrips, spellSlots);
+  };
 
-    // Cast the spell with combat mechanics
-    const caster = {
-      spellcastingAbility: spellcastingInfo.ability,
-      spellcastingModifier: spellcastingInfo.modifier,
-      proficiencyBonus: proficiencyBonus,
-      level: character.level,
-    };
-
-    const result = castSpell(spell, caster, targets);
-
-    // Update spell slots
-    if (spell.level > 0) {
-      updateSpellSlot(spell.level, 1);
-    }
-
-    // Create roll data
-    const roll: DiceRoll = {
-      id: crypto.randomUUID(),
-      playerId: character.id,
-      playerName: character.name || "Personagem sem nome",
-      characterName: character.name || "Personagem sem nome",
-      type: "spell",
-      label: spell.name,
-      formula: spell.level > 0 ? `Nível ${spell.level}` : "Truque",
-      result: result.damage || result.healing || 0,
-      details: result.description,
-      timestamp: new Date(),
-    };
-
-    // Always save to session (synchronized for all users)
-    const currentSession = localStorage.getItem("currentSession");
-    if (currentSession) {
-      try {
-        await addRollToSession(currentSession, roll);
-      } catch (error) {
-        console.error("Error adding spell roll to session:", error);
-      }
-    }
-
-    // Add to cast results
-    setCastResults((prev) => [
-      ...prev,
-      {
-        spell: spell.name,
-        result: result,
-        timestamp: new Date(),
-      },
-    ]);
+  // Toggle cantrip preparation
+  const toggleCantripPreparation = (cantripId: string) => {
+    const updatedCantrips = cantrips.map((cantrip) =>
+      cantrip.id === cantripId ? { ...cantrip, prepared: !cantrip.prepared } : cantrip
+    );
+    setCantrips(updatedCantrips);
+    saveSpellsState(spells, updatedCantrips, spellSlots);
   };
 
   const resetSpellSlots = () => {
@@ -217,10 +172,12 @@ export function UniversalCharacterSpells({ character, onUpdate }: UniversalChara
 
           <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 ${scrollAreaClass}`}>
             {filteredSpells.map((spell) => (
-              <div key={spell.id} className="border border-[var(--app-border)] rounded-lg p-2">
-                <div className="flex items-center justify-between mb-1">
+              <div key={spell.id} className="border border-[var(--app-border)] rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
                   <Tooltip content={spell.description}>
-                    <span className="text-sm font-medium text-[var(--app-fg)] cursor-help hover:text-purple-400 transition-colors">
+                    <span className={`text-sm font-medium cursor-help transition-colors ${
+                      spell.prepared ? "text-[var(--app-fg)]" : "text-[var(--app-muted)]"
+                    }`}>
                       {spell.name}
                     </span>
                   </Tooltip>
@@ -228,12 +185,17 @@ export function UniversalCharacterSpells({ character, onUpdate }: UniversalChara
                     Nível {spell.level}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--app-muted)]">{spell.school}</span>
-                  <button onClick={() => castSpellAction(spell)} className="text-xs px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600">
-                    Conjurar
-                  </button>
-                </div>
+                <div className="text-xs text-blue-400 mb-2">{spell.school}</div>
+                <button
+                  onClick={() => toggleSpellPreparation(spell.id)}
+                  className={`w-full px-2 py-1 text-xs font-medium rounded transition-colors ${
+                    spell.prepared 
+                      ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" 
+                      : "bg-gray-500/20 text-gray-400 hover:bg-gray-500/30"
+                  }`}
+                >
+                  {spell.prepared ? "Preparada" : "N/P"}
+                </button>
               </div>
             ))}
           </div>
@@ -253,21 +215,28 @@ export function UniversalCharacterSpells({ character, onUpdate }: UniversalChara
 
           <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 ${scrollAreaClass}`}>
             {filteredCantrips.map((cantrip) => (
-              <div key={cantrip.id} className="border border-[var(--app-border)] rounded-lg p-2">
-                <div className="flex items-center justify-between mb-1">
+              <div key={cantrip.id} className="border border-[var(--app-border)] rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
                   <Tooltip content={cantrip.description}>
-                    <span className="text-sm font-medium text-[var(--app-fg)] cursor-help hover:text-blue-400 transition-colors">
+                    <span className={`text-sm font-medium cursor-help transition-colors ${
+                      cantrip.prepared ? "text-[var(--app-fg)]" : "text-[var(--app-muted)]"
+                    }`}>
                       {cantrip.name}
                     </span>
                   </Tooltip>
                   <span className="text-xs px-1 py-0.5 bg-blue-500/20 text-blue-400 rounded">Truque</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--app-muted)]">{cantrip.school}</span>
-                  <button onClick={() => castSpellAction(cantrip)} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    Conjurar
-                  </button>
-                </div>
+                <div className="text-xs text-blue-400 mb-2">{cantrip.school}</div>
+                <button
+                  onClick={() => toggleCantripPreparation(cantrip.id)}
+                  className={`w-full px-2 py-1 text-xs font-medium rounded transition-colors ${
+                    cantrip.prepared 
+                      ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" 
+                      : "bg-gray-500/20 text-gray-400 hover:bg-gray-500/30"
+                  }`}
+                >
+                  {cantrip.prepared ? "Preparado" : "N/P"}
+                </button>
               </div>
             ))}
           </div>
@@ -287,23 +256,6 @@ export function UniversalCharacterSpells({ character, onUpdate }: UniversalChara
                 <div className="text-xs text-[var(--app-muted)]">Restantes</div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* Cast Results */}
-      {castResults.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-[var(--app-border)]">
-          <h4 className="text-sm font-medium text-[var(--app-fg)] mb-2">Resultados Recentes</h4>
-          <div className={`space-y-1 max-h-32 ${scrollAreaClass}`}>
-            {castResults
-              .slice(-5)
-              .reverse()
-              .map((result, index) => (
-                <div key={index} className="text-xs text-[var(--app-muted)]">
-                  {result.spell}: {result.result.description}
-                </div>
-              ))}
           </div>
         </div>
       )}
