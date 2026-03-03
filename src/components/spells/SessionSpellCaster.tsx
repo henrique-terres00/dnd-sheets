@@ -19,12 +19,9 @@ interface SessionSpellCasterProps {
 
 export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCharacters }: SessionSpellCasterProps) {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>("");
-  const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const [isCasting, setIsCasting] = useState(false);
   const [isRolling, setIsRolling] = useState(false);
-  const [pendingCast, setPendingCast] = useState<(() => void) | null>(null);
   const [currentFormula, setCurrentFormula] = useState<string>("1d20");
-  const [lastCast, setLastCast] = useState<{ spell: Spell; result: RollResult | null } | null>(null);
 
   // Combina personagens da sessão + locais
   const allCharacters = [
@@ -41,6 +38,9 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
 
   // Check if character has available spell slots
   const hasAvailableSlot = (level: number) => {
+    // Truques (nível 0) não precisam de slots - sempre disponíveis
+    if (level === 0) return true;
+    
     if (!characterSpells) return false;
     const slot = characterSpells.spellSlots.find(s => s.level === level);
     return slot ? slot.used < slot.total : false;
@@ -74,15 +74,10 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
   const executeCastWithAnimation = (castFunction: () => void, formula: string = "1d20") => {
     setCurrentFormula(formula);
     setIsRolling(true);
-    setPendingCast(() => castFunction);
-  };
-
-  const handleAnimationComplete = () => {
-    setIsRolling(false);
-    if (pendingCast) {
-      pendingCast();
-      setPendingCast(null);
-    }
+    setTimeout(() => {
+      castFunction();
+      setIsRolling(false);
+    }, 1500); // 1.5 segundos para animação dos dados
   };
 
   // Cast spell with synchronization
@@ -185,16 +180,14 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
       }
 
       // 8. Update last cast with proper RollResult format
+      const damageOrHealing = spellResult.damage || spellResult.healing;
       const rollResult: RollResult = {
-        total: spellResult.damage || spellResult.healing || 0,
+        total: damageOrHealing || 0,
         rolls: spellResult.damageRolls || spellResult.healingRolls || [],
         modifier: spellcastingInfo.modifier,
         formula: spell.name,
         details: spellResult.description
       };
-
-      setLastCast({ spell, result: rollResult });
-      setSelectedSpell(null);
 
     } catch (error) {
       console.error('Error casting spell:', error);
@@ -299,9 +292,7 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
                       <div
                         key={spell.id}
                         className={`border rounded-lg p-3 transition-colors ${
-                          selectedSpell?.id === spell.id
-                            ? 'border-purple-500 bg-purple-500/10'
-                            : 'border-[var(--app-border)] bg-[var(--app-bg)]'
+                          'border-[var(--app-border)] bg-[var(--app-bg])'
                         }`}
                       >
                         <div className="flex justify-between items-start">
@@ -339,9 +330,7 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
                     <div
                       key={cantrip.id}
                       className={`border rounded-lg p-3 transition-colors ${
-                        selectedSpell?.id === cantrip.id
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-[var(--app-border)] bg-[var(--app-bg)]'
+                        'border-[var(--app-border)] bg-[var(--app-bg)]'
                       }`}
                     >
                       <div className="flex justify-between items-start">
@@ -375,20 +364,6 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
           </div>
         )}
 
-        {/* Last Cast Result */}
-        {lastCast && (
-          <div className="mt-4 p-3 bg-[var(--app-bg)] rounded-lg border border-[var(--app-border)]">
-            <div className="text-sm font-medium text-[var(--app-fg)] mb-1">Última Magia</div>
-            <div className="text-purple-400">{lastCast.spell.name}</div>
-            {lastCast.result && (
-              <>
-                <div className="text-lg font-bold text-orange-500">{lastCast.result.total}</div>
-                <div className="text-xs text-[var(--app-muted)]">{lastCast.result.rolls.join(', ')}</div>
-              </>
-            )}
-          </div>
-        )}
-
         {!selectedCharacter && (
           <div className="text-center py-8 text-[var(--app-muted)]">
             <div className="text-4xl mb-2">🔮</div>
@@ -397,9 +372,8 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
         )}
       </div>
       <DiceAnimation 
-        isRolling={isRolling}
-        onComplete={handleAnimationComplete}
         formula={currentFormula}
+        isRolling={isRolling}
       />
     </div>
   );

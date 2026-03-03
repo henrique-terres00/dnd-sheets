@@ -22,5 +22,8 @@ export function formatRollMessage(roll: DiceRoll): string {
   
   const criticalIcon = roll.critical === 'success' ? ' 🎯' : roll.critical === 'failure' ? ' ❌' : '';
   
-  return `${time} ${typeIcon} ${roll.playerName} [${roll.label.toUpperCase()}] ${roll.details} = ${roll.result}${criticalIcon}`;
+  // Não mostrar o resultado se for 0 e não for relevante (magias de utilidade)
+  const resultText = (roll.result === 0 && roll.type === 'spell') ? '' : ` = ${roll.result}`;
+  
+  return `${time} ${typeIcon} ${roll.playerName} [${roll.label.toUpperCase()}] ${roll.details}${resultText}${criticalIcon}`;
 }

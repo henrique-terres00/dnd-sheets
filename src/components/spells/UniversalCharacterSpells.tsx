@@ -233,6 +233,11 @@ export function UniversalCharacterSpells({ character, onUpdate }: UniversalChara
                 </button>
               </div>
             ))}
+            {filteredCantrips.length === 0 && (
+              <div className="col-span-2 text-center text-[var(--app-muted)] py-4">
+                Nenhum truque encontrado
+              </div>
+            )}
           </div>
         </div>
       )}
