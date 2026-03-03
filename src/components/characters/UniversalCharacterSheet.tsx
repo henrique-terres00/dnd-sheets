@@ -231,6 +231,51 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
         <div className="flex flex-col gap-4 lg:col-span-2">
           <div className={boxClass()}>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <div className={labelClass()}>Imagem do Personagem</div>
+                <div className="flex items-center gap-3">
+                  {character.avatarDataUrl ? (
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={character.avatarDataUrl} 
+                        alt={character.name || "Personagem"} 
+                        className="w-24 h-24 rounded-lg object-cover border border-[var(--app-border)]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => update({ avatarDataUrl: null })}
+                        className="rounded-xl border border-red-500 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/20"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="w-24 h-24 rounded-lg border-2 border-dashed border-[var(--app-border)] flex items-center justify-center text-center">
+                        <span className="text-[var(--app-muted)] text-xs">Sem imagem</span>
+                      </div>
+                      <label className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-hover)] cursor-pointer">
+                        Escolher arquivo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                update({ avatarDataUrl: event.target?.result as string });
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
               <div>
                 <div className={labelClass()}>Nome do personagem</div>
                 <input className={inputClass()} value={character.name} onChange={(e) => update({ name: e.target.value })} />

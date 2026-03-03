@@ -235,7 +235,6 @@ export default function MapClient() {
     saveEnemies(enemies);
   }, [enemies]);
 
-  // Cleanup animation frame on unmount
   useEffect(() => {
     return () => {
       if (animationFrameRef.current !== 0) {
@@ -344,21 +343,19 @@ export default function MapClient() {
     if (isPanning) {
       const deltaX = e.clientX - panStart.x;
       const deltaY = e.clientY - panStart.y;
-      
-      // Cancel previous animation frame
+
       if (animationFrameRef.current !== 0) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      
-      // Use requestAnimationFrame for smoother panning
+
       animationFrameRef.current = requestAnimationFrame(() => {
-        setOffsetX(prev => prev + deltaX);
-        setOffsetY(prev => prev + deltaY);
+        setOffsetX((prev) => prev + deltaX);
+        setOffsetY((prev) => prev + deltaY);
         setPanStart({ x: e.clientX, y: e.clientY });
       });
       return;
     }
-    
+
     if (!dragging) return;
     const container = containerRef.current;
     if (!container) return;
@@ -368,8 +365,8 @@ export default function MapClient() {
     const rawX = (e.clientX - containerRect.left - offsetX - dragging.pointerOffsetX) / scale;
     const rawY = (e.clientY - containerRect.top - offsetY - dragging.pointerOffsetY) / scale;
 
-    const maxX = (containerRect.width / scale) - 40;
-    const maxY = (containerRect.height / scale) - 40;
+    const maxX = containerRect.width / scale - 40;
+    const maxY = containerRect.height / scale - 40;
 
     const x = snap(clamp(rawX, 0, maxX), gridSize);
     const y = snap(clamp(rawY, 0, maxY), gridSize);
@@ -382,7 +379,6 @@ export default function MapClient() {
     setIsPanning(false);
   };
 
-  // Add wheel event listener with passive: false to allow preventDefault
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -391,26 +387,25 @@ export default function MapClient() {
       if (e.shiftKey || e.ctrlKey) {
         e.preventDefault();
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        setScale(prev => clamp(prev * delta, 0.5, 3));
+        setScale((prev) => clamp(prev * delta, 0.5, 3));
       }
     };
 
-    container.addEventListener('wheel', wheelHandler, { passive: false });
+    container.addEventListener("wheel", wheelHandler, { passive: false });
 
     return () => {
-      container.removeEventListener('wheel', wheelHandler);
+      container.removeEventListener("wheel", wheelHandler);
     };
   }, []);
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    // Disable context menu when panning
     if (isPanning) {
       e.preventDefault();
     }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.shiftKey && e.button === 0) { // Left click + Shift
+    if (e.shiftKey && e.button === 0) {
       e.preventDefault();
       setIsPanning(true);
       setPanStart({ x: e.clientX, y: e.clientY });
@@ -420,99 +415,111 @@ export default function MapClient() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)] [color-scheme:dark]"
-              value={selectedEnemyId}
-              onChange={(e) => {
-                const v = e.target.value;
-                setSelectedEnemyId(v);
-                if (v !== "__new__") {
-                  setNewEnemyName("");
-                  setNewEnemyImageDataUrl("");
-                }
-              }}
-            >
-              <option value="">Adicionar inimigo...</option>
-              <option value="__new__">+ Criar inimigo...</option>
-              {enemies.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </select>
-            <button
-              className="rounded-lg border border-[var(--app-border)] bg-amber-500/15 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={addEnemyToken}
-              type="button"
-              disabled={!selectedEnemyId || selectedEnemyId === "__new__"}
-            >
-              Adicionar Inimigo
-            </button>
-            {isCreatingEnemy ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  className="w-44 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)]"
-                  value={newEnemyName}
-                  onChange={(e) => setNewEnemyName(e.target.value)}
-                  placeholder="Nome"
-                />
-                <label className="w-fit cursor-pointer rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <select
+                className="h-10 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 text-sm text-[var(--app-fg)] [color-scheme:dark]"
+                value={selectedEnemyId}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setSelectedEnemyId(v);
+                  if (v !== "__new__") {
+                    setNewEnemyName("");
+                    setNewEnemyImageDataUrl("");
+                  }
+                }}
+              >
+                <option value="">Adicionar inimigo...</option>
+                <option value="__new__">+ Criar inimigo...</option>
+                {enemies.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                className="h-10 rounded-lg border border-[var(--app-border)] bg-amber-500/15 px-3 text-sm font-medium text-[var(--app-fg)] hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={addEnemyToken}
+                type="button"
+                disabled={!selectedEnemyId || selectedEnemyId === "__new__"}
+              >
+                Adicionar Inimigo
+              </button>
+
+              {isCreatingEnemy ? (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <input
-                    className="sr-only"
-                    type="file"
-                    accept="image/*"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const dataUrl = await fileToDataUrl(file);
-                      setNewEnemyImageDataUrl(dataUrl);
-                    }}
+                    className="h-10 w-44 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 text-sm text-[var(--app-fg)]"
+                    value={newEnemyName}
+                    onChange={(e) => setNewEnemyName(e.target.value)}
+                    placeholder="Nome"
                   />
-                  Escolher arquivo
-                </label>
-                <button
-                  className="rounded-lg border border-[var(--app-border)] bg-amber-500/15 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-50"
-                  type="button"
-                  onClick={addCustomEnemy}
-                  disabled={!newEnemyName.trim() || !newEnemyImageDataUrl}
-                >
-                  Salvar
-                </button>
-              </div>
-            ) : null}
+
+                  <label className="flex h-10 cursor-pointer items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]">
+                    <input
+                      className="hidden"
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const dataUrl = await fileToDataUrl(file);
+                        setNewEnemyImageDataUrl(dataUrl);
+                      }}
+                    />
+                    Escolher arquivo
+                  </label>
+
+                  <button
+                    className="h-10 rounded-lg border border-[var(--app-border)] bg-amber-500/15 px-3 text-sm font-medium text-[var(--app-fg)] hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+                    type="button"
+                    onClick={addCustomEnemy}
+                    disabled={!newEnemyName.trim() || !newEnemyImageDataUrl}
+                  >
+                    Salvar
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="hidden h-6 w-px bg-[var(--app-border)] sm:block" />
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <select
+                className="h-10 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 text-sm text-[var(--app-fg)] [color-scheme:dark]"
+                value={selectedCharacterId}
+                onChange={(e) => setSelectedCharacterId(e.target.value)}
+              >
+                <option value="">Adicionar personagem...</option>
+                {characters.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name || "(Sem nome)"}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                className="h-10 rounded-lg border border-[var(--app-border)] bg-amber-500/15 px-3 text-sm font-medium text-[var(--app-fg)] hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={addCharacterToken}
+                type="button"
+                disabled={!selectedCharacterId}
+              >
+                Adicionar Personagem
+              </button>
+            </div>
           </div>
 
-          <div className="h-6 w-px bg-[var(--app-border)]" />
-
-          <select
-            className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)] [color-scheme:dark]"
-            value={selectedCharacterId}
-            onChange={(e) => setSelectedCharacterId(e.target.value)}
-          >
-            <option value="">Adicionar personagem...</option>
-            {characters.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name || "(Sem nome)"}
-              </option>
-            ))}
-          </select>
-          <button
-            className="rounded-lg border border-[var(--app-border)] bg-amber-500/15 px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-50"
-            onClick={addCharacterToken}
-            type="button"
-            disabled={!selectedCharacterId}
-          >
-            Adicionar Personagem
-          </button>
-          <button
-            className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
-            onClick={reset}
-            type="button"
-          >
-            Reset
-          </button>
+          <div className="sm:ml-auto">
+            <button
+              className="h-10 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
+              onClick={reset}
+              type="button"
+            >
+              Reset
+            </button>
+          </div>
         </div>
 
         <div className="text-xs text-[var(--app-muted)]">
@@ -575,32 +582,34 @@ export default function MapClient() {
         </div>
       </div>
 
-
       <div className="relative">
         {/* Zoom Controls - Outside map container */}
-        <div className="absolute top-4 right-4 flex flex-col gap-2 z-50">
+        <div className="absolute right-4 top-4 z-50 flex flex-col gap-2">
           <button
-            className="w-10 h-10 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)] flex items-center justify-center text-sm font-medium shadow-sm"
-            onClick={() => setScale(prev => clamp(prev * 1.2, 0.5, 3))}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-sm font-medium text-[var(--app-fg)] shadow-sm hover:bg-[var(--app-border)]"
+            onClick={() => setScale((prev) => clamp(prev * 1.2, 0.5, 3))}
             title="Zoom In (Ctrl + Scroll ou Shift + Scroll)"
+            type="button"
           >
             +
           </button>
           <button
-            className="w-10 h-10 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)] flex items-center justify-center text-sm font-medium shadow-sm"
-            onClick={() => setScale(prev => clamp(prev * 0.8, 0.5, 3))}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-sm font-medium text-[var(--app-fg)] shadow-sm hover:bg-[var(--app-border)]"
+            onClick={() => setScale((prev) => clamp(prev * 0.8, 0.5, 3))}
             title="Zoom Out (Ctrl + Scroll ou Shift + Scroll)"
+            type="button"
           >
             −
           </button>
           <button
-            className="w-10 h-10 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg)] hover:bg-[var(--app-border)] flex items-center justify-center text-xs font-medium shadow-sm"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-xs font-medium text-[var(--app-fg)] shadow-sm hover:bg-[var(--app-border)]"
             onClick={() => {
               setScale(1);
               setOffsetX(0);
               setOffsetY(0);
             }}
             title="Reset View (Voltar ao padrão)"
+            type="button"
           >
             ⟲
           </button>
@@ -619,7 +628,7 @@ export default function MapClient() {
             className="absolute inset-0"
             style={{
               transform: `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`,
-              transformOrigin: '0 0',
+              transformOrigin: "0 0",
               backgroundImage: backgroundCss
                 ? `url(${backgroundCss}), linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`
                 : `linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)`,
@@ -630,56 +639,56 @@ export default function MapClient() {
               backgroundRepeat: backgroundCss ? "no-repeat, repeat, repeat" : "repeat, repeat",
             }}
           >
-        {tokens.map((t) => {
-          const isCharacter = t.kind === "character";
-          const tokenSize = isCharacter ? "h-20 w-20" : "h-24 w-24";
-          const imageSize = isCharacter ? 80 : 96;
-          
-          return (
-            <div
-              key={t.id}
-              className={`absolute ${tokenSize} touch-none select-none`}
-              style={{ 
-                left: t.x * scale, 
-                top: t.y * scale,
-                transform: `scale(${scale})`
-              }}
-              onPointerDown={(e) => onPointerDownToken(e, t)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                removeToken(t.id);
-              }}
-              role="button"
-              tabIndex={0}
-              title={
-                t.kind === "character"
-                  ? getCharacter(t.characterId ?? "")?.name || "Personagem"
-                  : t.kind === "enemy"
-                    ? enemies.find((e) => e.id === t.enemyId)?.name || "Inimigo"
-                  : t.kind === "dragon"
-                    ? "Dragão"
-                    : t.kind === "goblin"
-                      ? "Goblin"
-                      : t.kind === "skeleton"
-                        ? "Esqueleto"
-                        : t.kind === "elf"
-                          ? "Elfo"
-                          : t.kind === "dwarf"
-                            ? "Anão"
-                            : "Orc"
-              }
-            >
-              {safeTokenImage(t).startsWith("data:") ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={safeTokenImage(t)} alt={t.kind} className={`${tokenSize}`} draggable={false} />
-              ) : (
-                <Image src={safeTokenImage(t)} alt={t.kind} width={imageSize} height={imageSize} draggable={false} />
-              )}
-            </div>
-          );
-        })}
+            {tokens.map((t) => {
+              const isCharacter = t.kind === "character";
+              const tokenSize = isCharacter ? "h-20 w-20" : "h-24 w-24";
+              const imageSize = isCharacter ? 80 : 96;
+
+              return (
+                <div
+                  key={t.id}
+                  className={`absolute ${tokenSize} touch-none select-none`}
+                  style={{
+                    left: t.x * scale,
+                    top: t.y * scale,
+                    transform: `scale(${scale})`,
+                  }}
+                  onPointerDown={(e) => onPointerDownToken(e, t)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    removeToken(t.id);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  title={
+                    t.kind === "character"
+                      ? getCharacter(t.characterId ?? "")?.name || "Personagem"
+                      : t.kind === "enemy"
+                        ? enemies.find((e) => e.id === t.enemyId)?.name || "Inimigo"
+                        : t.kind === "dragon"
+                          ? "Dragão"
+                          : t.kind === "goblin"
+                            ? "Goblin"
+                            : t.kind === "skeleton"
+                              ? "Esqueleto"
+                              : t.kind === "elf"
+                                ? "Elfo"
+                                : t.kind === "dwarf"
+                                  ? "Anão"
+                                  : "Orc"
+                  }
+                >
+                  {safeTokenImage(t).startsWith("data:") ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={safeTokenImage(t)} alt={t.kind} className={`${tokenSize}`} draggable={false} />
+                  ) : (
+                    <Image src={safeTokenImage(t)} alt={t.kind} width={imageSize} height={imageSize} draggable={false} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );
