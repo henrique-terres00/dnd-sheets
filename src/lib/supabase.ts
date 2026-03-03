@@ -203,9 +203,19 @@ export async function addRollToSession(code: string, roll: any) {
 
   const updatedRolls = [...(session.rolls || []), roll];
   
-  return await updateSession(code, {
+  const result = await updateSession(code, {
     rolls: updatedRolls
   });
+  
+  // Disparar evento global para notificar atualizações
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('sessionRollsUpdated', { 
+      detail: { session: result, rolls: updatedRolls } 
+    }));
+    console.log('Session rolls updated, event dispatched');
+  }
+  
+  return result;
 }
 
 // Real-time subscription
@@ -214,6 +224,8 @@ export function subscribeToSession(code: string, callback: (payload: any) => voi
     console.error('Supabase client not initialized');
     return { unsubscribe: () => {} };
   }
+  
+  console.log('Subscribing to session:', code);
   
   return supabase
     .channel(`session-${code}`)
@@ -224,7 +236,12 @@ export function subscribeToSession(code: string, callback: (payload: any) => voi
         table: 'sessions', 
         filter: `code=eq.${code}` 
       }, 
-      callback
+      (payload) => {
+        console.log('Session update received:', payload);
+        callback(payload);
+      }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log('Subscription status:', status);
+    });
 }

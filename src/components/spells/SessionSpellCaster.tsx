@@ -5,6 +5,7 @@ import { rollDamage, type RollResult } from "@/lib/dice";
 import { addRollToSession } from "@/lib/supabase";
 import { abilityMod } from "@/lib/dnd5e";
 import { castSpell, calculateSpellcastingAbility } from "@/lib/spellcasting";
+import { DiceAnimation } from "@/components/dice/DiceAnimation";
 import type { Character } from "@/lib/types";
 import type { CharacterSpellsState, Spell } from "@/lib/spells";
 import type { DiceRoll } from "@/lib/rollLog";
@@ -20,6 +21,9 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>("");
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const [isCasting, setIsCasting] = useState(false);
+  const [isRolling, setIsRolling] = useState(false);
+  const [pendingCast, setPendingCast] = useState<(() => void) | null>(null);
+  const [currentFormula, setCurrentFormula] = useState<string>("1d20");
   const [lastCast, setLastCast] = useState<{ spell: Spell; result: RollResult | null } | null>(null);
 
   // Combina personagens da sessão + locais
@@ -66,33 +70,58 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
     return abilityMod(selectedCharacter.abilities[ability]);
   };
 
+  // Function to execute spell cast with animation
+  const executeCastWithAnimation = (castFunction: () => void, formula: string = "1d20") => {
+    setCurrentFormula(formula);
+    setIsRolling(true);
+    setPendingCast(() => castFunction);
+  };
+
+  const handleAnimationComplete = () => {
+    setIsRolling(false);
+    if (pendingCast) {
+      pendingCast();
+      setPendingCast(null);
+    }
+  };
+
   // Cast spell with synchronization
   const castSpellAction = async (spell: Spell) => {
     if (!selectedCharacter || !characterSpells || !hasAvailableSlot(spell.level)) {
       return;
     }
 
-    setIsCasting(true);
+    // Determine dice formula based on spell
+    let spellFormula = "1d20";
+    if (spell.id === 'fireBolt') spellFormula = "1d10";
+    else if (spell.id === 'magicMissile') spellFormula = "3d4";
+    else if (spell.id === 'fireball') spellFormula = "8d6";
+    else if (spell.id === 'scorchingRay') spellFormula = "6d6";
+    else if (spell.id === 'lightningBolt') spellFormula = "8d6";
+    else if (spell.id === 'coneOfCold') spellFormula = "12d8";
 
-    try {
-      // 1. Calculate spellcasting ability
-      const spellcastingInfo = calculateSpellcastingAbility(selectedCharacter);
-      const proficiencyBonus = Math.floor((selectedCharacter.level + 7) / 4); // Simplified proficiency bonus
+    executeCastWithAnimation(async () => {
+      setIsCasting(true);
 
-      // 2. Create caster object
-      const caster = {
-        spellcastingAbility: spellcastingInfo.ability,
-        spellcastingModifier: spellcastingInfo.modifier,
-        proficiencyBonus: proficiencyBonus,
-        level: selectedCharacter.level,
-      };
+      try {
+        // 1. Calculate spellcasting ability
+        const spellcastingInfo = calculateSpellcastingAbility(selectedCharacter);
+        const proficiencyBonus = Math.floor((selectedCharacter.level + 7) / 4); // Simplified proficiency bonus
 
-      // 3. Cast the spell with proper mechanics
-      const spellResult = castSpell(spell, caster, []);
+        // 2. Create caster object
+        const caster = {
+          spellcastingAbility: spellcastingInfo.ability,
+          spellcastingModifier: spellcastingInfo.modifier,
+          proficiencyBonus: proficiencyBonus,
+          level: selectedCharacter.level,
+        };
 
-      // 4. Consume spell slot (if not a cantrip)
-      let updatedSpellSlots = [...characterSpells.spellSlots];
-      if (spell.level > 0) {
+        // 3. Cast the spell with proper mechanics
+        const spellResult = castSpell(spell, caster, []);
+
+        // 4. Consume spell slot (if not a cantrip)
+        let updatedSpellSlots = [...characterSpells.spellSlots];
+        if (spell.level > 0) {
         const slotIndex = updatedSpellSlots.findIndex(s => s.level === spell.level);
         
         if (slotIndex !== -1) {
@@ -122,6 +151,10 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
       if (currentSession) {
         try {
           await addRollToSession(currentSession, spellRoll);
+          
+          // Disparar evento com a rolagem para atualização imediata
+          window.dispatchEvent(new CustomEvent('newRoll', { detail: spellRoll }));
+          console.log('Spell roll dispatched:', spellRoll);
         } catch (error) {
           console.error('Error adding spell cast to session:', error);
         }
@@ -168,6 +201,7 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
     } finally {
       setIsCasting(false);
     }
+    }, spellFormula);
   };
 
   if (!isOpen) return null;
@@ -362,6 +396,11 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
           </div>
         )}
       </div>
+      <DiceAnimation 
+        isRolling={isRolling}
+        onComplete={handleAnimationComplete}
+        formula={currentFormula}
+      />
     </div>
   );
 }

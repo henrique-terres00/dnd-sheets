@@ -11,6 +11,7 @@ import {
 } from "@/lib/dice";
 import { addRollToSession } from "@/lib/supabase";
 import { calculateArmorClass } from "@/lib/equipmentUtils";
+import { DiceAnimation } from "./DiceAnimation";
 import type { Character } from "@/lib/types";
 import type { DiceRoll } from "@/lib/rollLog";
 
@@ -31,6 +32,9 @@ export function UniversalDiceRoller({ isOpen, onClose, characters }: UniversalDi
   const [magicBonus, setMagicBonus] = useState<number>(0);
   const [advantage, setAdvantage] = useState<'none' | 'advantage' | 'disadvantage'>('none');
   const [lastRoll, setLastRoll] = useState<RollResult | null>(null);
+  const [isRolling, setIsRolling] = useState(false);
+  const [pendingRoll, setPendingRoll] = useState<(() => void) | null>(null);
+  const [currentFormula, setCurrentFormula] = useState<string>("1d20");
 
   const selectedCharacter = characters.find(c => c.id === selectedCharacterId);
 
@@ -56,6 +60,21 @@ export function UniversalDiceRoller({ isOpen, onClose, characters }: UniversalDi
     { key: "wis", label: "Sabedoria" },
     { key: "cha", label: "Carisma" }
   ];
+
+  // Function to execute roll with animation
+  const executeRollWithAnimation = (rollFunction: () => void, formula: string = "1d20") => {
+    setCurrentFormula(formula);
+    setIsRolling(true);
+    setPendingRoll(() => rollFunction);
+  };
+
+  const handleAnimationComplete = () => {
+    setIsRolling(false);
+    if (pendingRoll) {
+      pendingRoll();
+      setPendingRoll(null);
+    }
+  };
 
   // Skills for checks
   const skills = [
@@ -102,6 +121,10 @@ export function UniversalDiceRoller({ isOpen, onClose, characters }: UniversalDi
     if (currentSession) {
       try {
         await addRollToSession(currentSession, roll);
+        
+        // Disparar evento com a rolagem para atualização imediata
+        window.dispatchEvent(new CustomEvent('newRoll', { detail: roll }));
+        console.log('New roll dispatched:', roll);
       } catch (error) {
         console.error('Error adding roll to session:', error);
       }
@@ -114,107 +137,130 @@ export function UniversalDiceRoller({ isOpen, onClose, characters }: UniversalDi
   const handleSkillRoll = async () => {
     if (!selectedCharacter || !selectedSkill) return;
 
-    const skill = skills.find(s => s.key === selectedSkill);
-    if (!skill) return;
+    executeRollWithAnimation(async () => {
+      const skill = skills.find(s => s.key === selectedSkill);
+      if (!skill) return;
 
-    const abilityModValue = abilityMod(selectedCharacter.abilities[skill.ability as keyof typeof selectedCharacter.abilities]);
-    const isProficient = selectedCharacter.skillProficiencies[selectedSkill as keyof typeof selectedCharacter.skillProficiencies];
-    const isExpertise = false;
+      const abilityModValue = abilityMod(selectedCharacter.abilities[skill.ability as keyof typeof selectedCharacter.abilities]);
+      const isProficient = selectedCharacter.skillProficiencies[selectedSkill as keyof typeof selectedCharacter.skillProficiencies];
+      const isExpertise = false;
 
-    const result = rollSkillCheck(abilityModValue, isProficient ? proficiencyBonus : 0, isExpertise, advantage);
-    await createRoll('skill', skill.label, result);
+      const result = rollSkillCheck(abilityModValue, isProficient ? proficiencyBonus : 0, isExpertise, advantage);
+      await createRoll('skill', skill.label, result);
+    }, "1d20");
   };
 
   // Ability check roll
   const handleAbilityRoll = async () => {
     if (!selectedCharacter || !selectedAbility) return;
 
-    const abilityModValue = abilityMod(selectedCharacter.abilities[selectedAbility as keyof typeof selectedCharacter.abilities]);
-    const result = rollSkillCheck(abilityModValue, 0, false, advantage);
-    
-    const ability = abilities.find(a => a.key === selectedAbility);
-    if (ability) {
-      await createRoll('ability-check', ability.label, result);
-    }
+    executeRollWithAnimation(async () => {
+      const abilityModValue = abilityMod(selectedCharacter.abilities[selectedAbility as keyof typeof selectedCharacter.abilities]);
+      const result = rollSkillCheck(abilityModValue, 0, false, advantage);
+      
+      const ability = abilities.find(a => a.key === selectedAbility);
+      if (ability) {
+        await createRoll('ability-check', ability.label, result);
+      }
+    }, "1d20");
   };
 
   // Attack roll
   const handleAttackRoll = async () => {
     if (!selectedCharacter) return;
 
-    // Check if character has weapons equipped
-    const equippedWeapons = selectedCharacter.characterEquipment?.weapons || [];
-    
-    if (equippedWeapons.length === 0) {
-      // Fallback to manual selection if no weapons equipped
-      const attackMod = abilityMod(selectedCharacter.abilities[attackAbility as keyof typeof selectedCharacter.abilities]);
-      const result = rollAttack(proficiencyBonus, attackMod, magicBonus, advantage);
-      const abilityLabel = abilities.find(a => a.key === attackAbility)?.label || attackAbility;
-      await createRoll('attack', `Ataque (${abilityLabel})`, result);
-      return;
-    }
+    executeRollWithAnimation(async () => {
+      // Check if character has weapons equipped
+      const equippedWeapons = selectedCharacter.characterEquipment?.weapons || [];
+      
+      if (equippedWeapons.length === 0) {
+        // Fallback to manual selection if no weapons equipped
+        const attackMod = abilityMod(selectedCharacter.abilities[attackAbility as keyof typeof selectedCharacter.abilities]);
+        const result = rollAttack(proficiencyBonus, attackMod, magicBonus, advantage);
+        const abilityLabel = abilities.find(a => a.key === attackAbility)?.label || attackAbility;
+        await createRoll('attack', `Ataque (${abilityLabel})`, result);
+        return;
+      }
 
-    // Use selected weapon or first weapon if none selected
-    const weapon = selectedWeaponId 
-      ? equippedWeapons.find((w: any) => w.id === selectedWeaponId) || equippedWeapons[0]
-      : equippedWeapons[0];
+      // Use selected weapon or first weapon if none selected
+      const weapon = selectedWeaponId 
+        ? equippedWeapons.find((w: any) => w.id === selectedWeaponId) || equippedWeapons[0]
+        : equippedWeapons[0];
     
-    const weaponAbility = weapon.ability || 'str';
-    const abilityScore = selectedCharacter.abilities[weaponAbility];
-    const attackMod = abilityMod(abilityScore);
-    
-    const result = rollAttack(proficiencyBonus, attackMod, weapon.magicalBonus || 0, advantage);
-    await createRoll('attack', `Ataque com ${weapon.name}`, result);
+      const weaponAbility = weapon.ability || 'str';
+      const abilityScore = selectedCharacter.abilities[weaponAbility];
+      const attackMod = abilityMod(abilityScore);
+      
+      const result = rollAttack(proficiencyBonus, attackMod, weapon.magicalBonus || 0, advantage);
+      await createRoll('attack', `Ataque com ${weapon.name}`, result);
+    }, "1d20");
   };
 
   // Damage roll
   const handleDamageRoll = async (critical: boolean = false) => {
     if (!selectedCharacter) return;
 
-    // Check if character has weapons equipped
+    // Determine damage formula
     const equippedWeapons = selectedCharacter.characterEquipment?.weapons || [];
+    let damageFormula = damageDice;
     
-    if (equippedWeapons.length === 0) {
-      // Fallback to manual selection if no weapons equipped
-      const damageMod = abilityMod(selectedCharacter.abilities[damageAbility as keyof typeof selectedCharacter.abilities]);
-      const result = rollDamage(damageDice, damageMod, critical);
-      const abilityLabel = abilities.find(a => a.key === damageAbility)?.label || damageAbility;
-      await createRoll('damage', `Dano (${abilityLabel})${critical ? ' (Crítico)' : ''}`, result);
-      return;
+    if (equippedWeapons.length > 0) {
+      const weapon = selectedWeaponId 
+        ? equippedWeapons.find((w: any) => w.id === selectedWeaponId) || equippedWeapons[0]
+        : equippedWeapons[0];
+      damageFormula = weapon.damage || damageDice;
     }
 
-    // Use selected weapon or first weapon if none selected
-    const weapon = selectedWeaponId 
-      ? equippedWeapons.find((w: any) => w.id === selectedWeaponId) || equippedWeapons[0]
-      : equippedWeapons[0];
+    executeRollWithAnimation(async () => {
+      // Check if character has weapons equipped
+      const equippedWeapons = selectedCharacter.characterEquipment?.weapons || [];
+      
+      if (equippedWeapons.length === 0) {
+        // Fallback to manual selection if no weapons equipped
+        const damageMod = abilityMod(selectedCharacter.abilities[damageAbility as keyof typeof selectedCharacter.abilities]);
+        const result = rollDamage(damageDice, damageMod, critical);
+        const abilityLabel = abilities.find(a => a.key === damageAbility)?.label || damageAbility;
+        await createRoll('damage', `Dano (${abilityLabel})${critical ? ' (Crítico)' : ''}`, result);
+        return;
+      }
+
+      // Use selected weapon or first weapon if none selected
+      const weapon = selectedWeaponId 
+        ? equippedWeapons.find((w: any) => w.id === selectedWeaponId) || equippedWeapons[0]
+        : equippedWeapons[0];
     
-    const weaponAbility = weapon.ability || 'str';
-    const abilityScore = selectedCharacter.abilities[weaponAbility];
-    const damageMod = abilityMod(abilityScore);
-    
-    const result = rollDamage(weapon.damage, damageMod, critical);
-    await createRoll('damage', `Dano de ${weapon.name}${critical ? ' (Crítico)' : ''}`, result);
+      const weaponAbility = weapon.ability || 'str';
+      const abilityScore = selectedCharacter.abilities[weaponAbility];
+      const damageMod = abilityMod(abilityScore);
+      
+      const result = rollDamage(weapon.damage, damageMod, critical);
+      await createRoll('damage', `Dano de ${weapon.name}${critical ? ' (Crítico)' : ''}`, result);
+    }, damageFormula);
   };
 
   // Initiative roll
   const handleInitiativeRoll = async () => {
     if (!selectedCharacter) return;
 
-    const dexMod = abilityMod(selectedCharacter.abilities.dex);
-    const result = rollInitiative(dexMod);
-    await createRoll('initiative', 'Iniciativa', result);
+    executeRollWithAnimation(async () => {
+      const dexMod = abilityMod(selectedCharacter.abilities.dex);
+      const result = rollInitiative(dexMod);
+      await createRoll('initiative', 'Iniciativa', result);
+    }, "1d20");
   };
 
   // Saving throw roll
   const handleSavingThrowRoll = async (ability: string) => {
     if (!selectedCharacter) return;
 
-    const abilityModValue = abilityMod(selectedCharacter.abilities[ability as keyof typeof selectedCharacter.abilities]);
-    const isProficient = selectedCharacter.savingThrowProficiencies[ability as keyof typeof selectedCharacter.savingThrowProficiencies];
-    const result = rollSkillCheck(abilityModValue, isProficient ? proficiencyBonus : 0, false, advantage);
-    
-    const abilityLabel = abilities.find(a => a.key === ability)?.label || ability;
-    await createRoll('saving-throw', `Salvaguarda de ${abilityLabel}`, result);
+    executeRollWithAnimation(async () => {
+      const abilityModValue = abilityMod(selectedCharacter.abilities[ability as keyof typeof selectedCharacter.abilities]);
+      const isProficient = selectedCharacter.savingThrowProficiencies[ability as keyof typeof selectedCharacter.savingThrowProficiencies];
+      const result = rollSkillCheck(abilityModValue, isProficient ? proficiencyBonus : 0, false, advantage);
+      
+      const abilityLabel = abilities.find(a => a.key === ability)?.label || ability;
+      await createRoll('saving-throw', `Salvaguarda de ${abilityLabel}`, result);
+    }, "1d20");
   };
 
   if (!isOpen) return null;
@@ -504,6 +550,11 @@ export function UniversalDiceRoller({ isOpen, onClose, characters }: UniversalDi
           </>
         )}
       </div>
+      <DiceAnimation 
+        isRolling={isRolling}
+        onComplete={handleAnimationComplete}
+        formula={currentFormula}
+      />
     </div>
   );
 }

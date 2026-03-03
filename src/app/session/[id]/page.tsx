@@ -48,11 +48,61 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     }
     
     const subscription = subscribeToSession(sessionCode, (payload) => {
-      setSession(payload.new);
+      console.log('Session update callback:', payload);
+      if (payload && payload.new) {
+        setSession(payload.new);
+      } else if (payload && payload.record) {
+        // Alternative payload structure
+        setSession(payload.record);
+      }
     });
+
+    // Listener para eventos de rolagem adicionados
+    const handleRollAdded = async () => {
+      console.log('Roll added event received, updating session data');
+      // Atualizar apenas os dados da sessão sem recarregar a página
+      try {
+        const updatedSession = await getSession(sessionCode);
+        if (updatedSession) {
+          setSession(updatedSession);
+          console.log('Session updated with new rolls');
+        }
+      } catch (error) {
+        console.error('Error updating session after roll:', error);
+      }
+    };
+
+    // Listener para novas rolagens (atualização local imediata)
+    const handleNewRoll = (event: any) => {
+      console.log('New roll received:', event.detail);
+      if (event.detail && session) {
+        // Adicionar a rolagem diretamente ao estado local
+        const updatedSession = {
+          ...session,
+          rolls: [...(session.rolls || []), event.detail]
+        };
+        setSession(updatedSession);
+        console.log('Session updated locally with new roll');
+      }
+    };
+
+    // Listener para atualizações de rolagens da sessão
+    const handleSessionRollsUpdated = (event: any) => {
+      console.log('Session rolls updated event received:', event.detail);
+      if (event.detail && event.detail.session) {
+        setSession(event.detail.session);
+      }
+    };
+
+    window.addEventListener('rollAdded', handleRollAdded);
+    window.addEventListener('newRoll', handleNewRoll);
+    window.addEventListener('sessionRollsUpdated', handleSessionRollsUpdated);
 
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener('rollAdded', handleRollAdded);
+      window.removeEventListener('newRoll', handleNewRoll);
+      window.removeEventListener('sessionRollsUpdated', handleSessionRollsUpdated);
     };
   }, [sessionCode]);
 
