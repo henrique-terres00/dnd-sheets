@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase, subscribeToSession, createSession, getSession, updateSession, addCharacterToSession, addRollToSession, deleteSession } from "@/lib/supabase";
+import { supabase, subscribeToSession, createSession, getSession, updateSession, addCharacterToSession, addRollToSession, deleteSession, testConnection } from "@/lib/supabase";
 import { UniversalDiceRoller } from "@/components/dice/UniversalDiceRoller";
 import { SessionSpellCaster } from "@/components/spells/SessionSpellCaster";
 import MapClient from "@/components/map/MapClient";
@@ -315,7 +315,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                           <p className="text-sm text-[var(--app-muted)] mb-1">{character.className} Nível {character.level}</p>
                           <p className="text-sm text-[var(--app-muted)] mb-3">{character.race}</p>
                           <Link 
-                            href={`/session-characters/${character.id}`}
+                            href={`/session-characters/${character.id}?session=${sessionCode}`}
                             className="text-sm text-blue-400 hover:text-blue-300"
                           >
                             Ver Ficha →

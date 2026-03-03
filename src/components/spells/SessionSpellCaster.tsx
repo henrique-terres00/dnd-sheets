@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { rollDamage, type RollResult } from "@/lib/dice";
 import { addRollToSession } from "@/lib/supabase";
 import { abilityMod } from "@/lib/dnd5e";
+import { castSpell, calculateSpellcastingAbility } from "@/lib/spellcasting";
 import type { Character } from "@/lib/types";
 import type { CharacterSpellsState, Spell } from "@/lib/spells";
 import type { DiceRoll } from "@/lib/rollLog";
@@ -66,7 +67,7 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
   };
 
   // Cast spell with synchronization
-  const castSpell = async (spell: Spell) => {
+  const castSpellAction = async (spell: Spell) => {
     if (!selectedCharacter || !characterSpells || !hasAvailableSlot(spell.level)) {
       return;
     }
@@ -74,40 +75,49 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
     setIsCasting(true);
 
     try {
-      // 1. Consume spell slot
-      const updatedSpellSlots = [...characterSpells.spellSlots];
-      const slotIndex = updatedSpellSlots.findIndex(s => s.level === spell.level);
-      
-      if (slotIndex !== -1) {
-        updatedSpellSlots[slotIndex] = {
-          ...updatedSpellSlots[slotIndex],
-          used: updatedSpellSlots[slotIndex].used + 1
-        };
+      // 1. Calculate spellcasting ability
+      const spellcastingInfo = calculateSpellcastingAbility(selectedCharacter);
+      const proficiencyBonus = Math.floor((selectedCharacter.level + 7) / 4); // Simplified proficiency bonus
+
+      // 2. Create caster object
+      const caster = {
+        spellcastingAbility: spellcastingInfo.ability,
+        spellcastingModifier: spellcastingInfo.modifier,
+        proficiencyBonus: proficiencyBonus,
+        level: selectedCharacter.level,
+      };
+
+      // 3. Cast the spell with proper mechanics
+      const spellResult = castSpell(spell, caster, []);
+
+      // 4. Consume spell slot (if not a cantrip)
+      let updatedSpellSlots = [...characterSpells.spellSlots];
+      if (spell.level > 0) {
+        const slotIndex = updatedSpellSlots.findIndex(s => s.level === spell.level);
+        
+        if (slotIndex !== -1) {
+          updatedSpellSlots[slotIndex] = {
+            ...updatedSpellSlots[slotIndex],
+            used: updatedSpellSlots[slotIndex].used + 1
+          };
+        }
       }
 
-      // 2. Roll damage if spell has damage (simplified for now)
-      let damageRoll: RollResult | null = null;
-      // Note: Spell type doesn't have damage property, so we'll skip damage rolling for now
-      // This would need to be added to the Spell type or handled differently
-      const formula = `${spell.level}º círculo`;
-      const result = 0;
-      const details = `${spell.name} (${spell.level}º círculo)`;
-
-      // 3. Create spell cast record
+      // 5. Create spell cast record
       const spellRoll: DiceRoll = {
         id: crypto.randomUUID(),
         playerId: selectedCharacter.id,
-        playerName: selectedCharacter.name || "Personagem sem nome", // Use character name instead of player name
+        playerName: selectedCharacter.name || "Personagem sem nome",
         characterName: selectedCharacter.name || "Personagem sem nome",
         type: 'spell',
         label: spell.name,
-        formula,
-        result,
-        details,
+        formula: spell.level > 0 ? `Nível ${spell.level}` : "Truque",
+        result: spellResult.damage || spellResult.healing || 0,
+        details: spellResult.description,
         timestamp: new Date()
       };
 
-      // 4. Add to session (synchronized)
+      // 6. Add to session (synchronized)
       const currentSession = localStorage.getItem('currentSession');
       if (currentSession) {
         try {
@@ -117,7 +127,7 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
         }
       }
 
-      // 5. Update character's spell slots (this would need to be synchronized too)
+      // 7. Update character's spell slots
       const updatedCharacter = {
         ...selectedCharacter,
         characterSpells: {
@@ -141,7 +151,16 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
         }
       }
 
-      setLastCast({ spell, result: damageRoll });
+      // 8. Update last cast with proper RollResult format
+      const rollResult: RollResult = {
+        total: spellResult.damage || spellResult.healing || 0,
+        rolls: spellResult.damageRolls || spellResult.healingRolls || [],
+        modifier: spellcastingInfo.modifier,
+        formula: spell.name,
+        details: spellResult.description
+      };
+
+      setLastCast({ spell, result: rollResult });
       setSelectedSpell(null);
 
     } catch (error) {
@@ -267,7 +286,7 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
                             )}
                           </div>
                           <button
-                            onClick={() => canCast && castSpell(spell)}
+                            onClick={() => canCast && castSpellAction(spell)}
                             disabled={!canCast || isCasting}
                             className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                               canCast
@@ -307,7 +326,7 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
                           )}
                         </div>
                         <button
-                          onClick={() => castSpell(cantrip)}
+                          onClick={() => castSpellAction(cantrip)}
                           disabled={isCasting}
                           className={`px-3 py-1 rounded text-sm font-medium transition-colors bg-blue-500 text-white hover:bg-blue-600 ${isCasting ? 'opacity-50' : ''}`}
                         >
@@ -330,7 +349,7 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
             {lastCast.result && (
               <>
                 <div className="text-lg font-bold text-orange-500">{lastCast.result.total}</div>
-                <div className="text-xs text-[var(--app-muted)]">{lastCast.result.details}</div>
+                <div className="text-xs text-[var(--app-muted)]">{lastCast.result.rolls.join(', ')}</div>
               </>
             )}
           </div>

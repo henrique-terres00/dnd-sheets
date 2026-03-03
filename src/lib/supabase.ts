@@ -49,6 +49,28 @@ export interface SessionRoll {
   created_at: string;
 }
 
+// Test function to check Supabase connection
+export async function testConnection() {
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    return false;
+  }
+  
+  try {
+    console.log('Testing Supabase connection...');
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('count')
+      .limit(1);
+    
+    console.log('Connection test result:', { data, error });
+    return !error;
+  } catch (err) {
+    console.error('Connection test failed:', err);
+    return false;
+  }
+}
+
 // Database functions
 export async function createSession(code: string) {
   if (!supabase) {
@@ -56,7 +78,6 @@ export async function createSession(code: string) {
   }
   
   try {
-    console.log('Creating session with code:', code);
     const { data, error } = await supabase
       .from('sessions')
       .insert({
@@ -67,13 +88,12 @@ export async function createSession(code: string) {
         active_players: 0
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error creating session:', error);
       throw error;
     }
-    console.log('Session created successfully:', data);
     return data;
   } catch (err) {
     console.error('Failed to create session:', err);
@@ -87,29 +107,21 @@ export async function getSession(code: string) {
   }
   
   try {
-    console.log('Getting session with code:', code);
     const { data, error } = await supabase
       .from('sessions')
       .select('*')
       .eq('code', code.toUpperCase())
-      .single();
-
-    // PGRST116 means no rows found - session doesn't exist
-    if (error && error.code === 'PGRST116') {
-      console.log('Session not found (PGRST116):', code);
-      return null; // Return null for non-existent session
-    }
+      .maybeSingle();
 
     if (error) {
       console.error('Error getting session:', error);
-      throw error;
+      return null;
     }
     
-    console.log('Session retrieved:', data);
     return data;
   } catch (err) {
     console.error('Failed to get session:', err);
-    throw err;
+    return null;
   }
 }
 
@@ -126,7 +138,7 @@ export async function updateSession(code: string, updates: Partial<Session>) {
     })
     .eq('code', code.toUpperCase())
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;

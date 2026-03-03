@@ -12,7 +12,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você emite um raio de fogo na direção de uma criatura ou objeto à sua escolha dentro do alcance. Faça um ataque de magia à distância. Se atingir, o alvo sofre 1d10 de dano de fogo.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer", "warlock"]
   },
   {
@@ -25,7 +25,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, M (uma vela ou fósforo)",
     duration: "1 hora (concentração)",
     description: "Você toca um objeto e ele brilha com luz. O objeto emite luz brilhante em um raio de 20 pés e luz fraca por mais 20 pés.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer", "bard", "cleric", "druid"]
   },
   {
@@ -64,7 +64,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Concentração, até 1 minuto",
     description: "Você toca uma criatura disposta. Quando a criatura fizer uma rolagem de teste de habilidade ou salvaguarda antes da magia terminar, ela pode rolar um d4 e adicionar o resultado à rolagem.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "druid"]
   },
   {
@@ -77,7 +77,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você toca o sino que só os mortos podem ouvir. Uma criatura à sua escolha dentro do alcance deve fazer uma salvaguarda de Sabedoria. Se o alvo estiver com pontos de vida ausentes, sofre 1d12 de dano necrótico. Caso contrário, sofre 1d8 de dano necrótico.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "warlock"]
   },
   {
@@ -90,7 +90,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Chama radiante desce do céu em um ponto à sua escolha dentro do alcance. Cada criatura em uma esfera de 5 pés de raio centrada nesse ponto deve fazer uma salvaguarda de Destreza. Uma criatura sofre 1d6 de dano radiante em uma falha, ou metade do dano em um sucesso.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric"]
   },
   {
@@ -103,7 +103,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você prevê o tempo ou cria um pequeno efeito meteorológico. Você também pode fazer com que flores brotem, criar uma leve brisa ou fazer um som de animal.",
-    prepared: true,
+    prepared: false,
     classes: ["druid"]
   },
   {
@@ -116,7 +116,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (folhas de carvalho)",
     duration: "1 minuto",
     description: "O madeiro de uma clava ou cajado que você segura é imbuido com energia. A arma se torna mágica e usa seu modificador de habilidade para ataques e danos.",
-    prepared: true,
+    prepared: false,
     classes: ["druid"]
   },
   {
@@ -129,7 +129,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um espinho de planta)",
     duration: "Instantânea",
     description: "Você cria um chicote comprido e espinhoso que arrasta uma criatura. Faça um ataque de magia. Se atingir, o alvo sofre 1d6 de dano de perfuração e é puxado 10 pés para mais perto de você.",
-    prepared: true,
+    prepared: false,
     classes: ["druid"]
   },
   {
@@ -142,7 +142,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V",
     duration: "Instantânea",
     description: "Você unleashes uma string de insults laced com arcane energy. Uma criatura à sua escolha dentro do alcance deve fazer uma salvaguarda de Sabedoria. Se falhar, sofre 1d4 de dano psíquico e tem desvantagem no próximo ataque.",
-    prepared: true,
+    prepared: false,
     classes: ["bard"]
   },
   {
@@ -155,7 +155,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "1 minuto",
     description: "Você cria um som ou imagem de objeto dentro do alcance. A imagem não tem som, smell, texture ou temperatura.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "bard", "sorcerer", "warlock"]
   },
   {
@@ -168,7 +168,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você emite um raio de gelo na direção de uma criatura ou objeto à sua escolha dentro do alcance. Faça um ataque de magia à distância. Se atingir, o alvo sofre 1d8 de dano de gelo e sua velocidade é reduzida em 10 pés até o próximo turno.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer"]
   },
   {
@@ -181,7 +181,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você cria energia elétrica em suas mãos. Faça um ataque de magia corpo a corpo. Se atingir, o alvo sofre 1d8 de dano de relâmpago e não pode tomar reações até o próximo turno.",
-    prepared: true,
+    prepared: false,
     classes: ["sorcerer", "warlock", "wizard"]
   },
   {
@@ -207,7 +207,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você cria um feixe de energia gélida. Faça um ataque de magia à distância. Se atingir, o alvo sofre 1d8 de dano necrótico e não pode recuperar pontos de vida até o próximo turno.",
-    prepared: true,
+    prepared: false,
     classes: ["sorcerer", "warlock", "wizard"]
   },
   {
@@ -220,7 +220,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (duas agulhas de couro)",
     duration: "Instantânea",
     description: "Você toca um objeto quebrado e o conserta. A magia pode consertar uma única break ou tear em um objeto.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "artificer", "bard"]
   },
   {
@@ -233,7 +233,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pequeno pedaço de cobre)",
     duration: "1 rodada",
     description: "Você pode enviar uma mensagem telepática para uma criatura que você possa ver. A criatura pode responder telepaticamente.",
-    prepared: true,
+    prepared: false,
     classes: ["bard", "sorcerer", "warlock", "wizard"]
   },
   {
@@ -246,7 +246,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "1 rodada",
     description: "Você estende sua mão e rastros de energia azul protegem você. Você tem resistência a dano contundante, perfurante e cortante de ataques de arma não mágicos.",
-    prepared: true,
+    prepared: false,
     classes: ["warlock", "wizard"]
   },
   {
@@ -259,7 +259,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pouco de fósforo ou uma vela)",
     duration: "Concentração, até 1 minuto",
     description: "Você cria até quatro torch-sized lights que aparecem onde você escolher dentro do alcance. Você pode mover os lights como uma ação bônus.",
-    prepared: true,
+    prepared: false,
     classes: ["bard", "sorcerer", "wizard"]
   },
   {
@@ -272,7 +272,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você expele spray de poison em uma criatura. Faça um ataque de magia corpo a corpo. Se atingir, o alvo deve fazer uma salvaguarda de Constituição ou sofre 1d12 de dano de veneno.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "sorcerer", "warlock", "wizard"]
   },
   {
@@ -285,7 +285,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pequeno manto de seda)",
     duration: "Concentração, até 1 minuto",
     description: "Você toca uma criatura disposta. Ela pode rolar um d4 e adicionar o resultado a uma salvaguarda de sua escolha.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "druid"]
   },
   {
@@ -298,7 +298,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea ou Concentração, até 1 hora",
     description: "Você escolhe uma área de água que você possa ver dentro do alcance. Você pode freeze, boil, ou modelar a água como uma ação.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "sorcerer", "wizard"]
   },
   {
@@ -311,7 +311,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V",
     duration: "Instantânea",
     description: "Você manifesta um efeito mágico menor. Você pode criar um efeito sensorial instantâneo, como uma faísca, som ou odor, ou causar uma pequena mudança ambiental.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric"]
   },
   {
@@ -324,7 +324,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você estabiliza uma criatura com 0 pontos de vida. Se a criatura não tiver mortos, ela para de morrer e pode fazer rolagens de morte com vantagem.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric"]
   },
 
@@ -339,7 +339,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você cria três mísseis brilhantes de energia. Cada míssil atinge uma criatura que você possa ver à sua escolha dentro do alcance, causando 1d4+1 de dano de força.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer"]
   },
   {
@@ -352,7 +352,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "1 minuto",
     description: "Uma barreira invisível de força mágica aparece e protege você. Até o final da magia, você tem um bônus de +5 na CA e é imune a mísseis mágicos.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer"]
   },
   {
@@ -391,7 +391,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Uma criatura que você tocar reganha 1d8 + seu modificador de habilidade de conjuração de pontos de vida.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "druid", "paladin", "ranger", "bard"]
   },
   {
@@ -404,7 +404,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V",
     duration: "Instantânea",
     description: "Uma criatura à sua escolha dentro do alcance reganha 1d4 + seu modificador de habilidade de conjuração de pontos de vida.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "druid", "bard"]
   },
   {
@@ -417,7 +417,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pouco de água benta)",
     duration: "Concentração, até 1 minuto",
     description: "Você abençoa até três criaturas à sua escolha dentro do alcance. Cada criatura ganha um d4 para adicionar às rolagens de ataque e salvaguardas.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "paladin"]
   },
   {
@@ -430,7 +430,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "1 rodada",
     description: "Um flash de luz irrompe do seu ponto. Uma criatura à sua escolha dentro do alcance deve fazer uma salvaguarda de Destreza. Se falhar, sofre 4d6 de dano radiante e o próximo ataque contra ela tem vantagem.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric"]
   },
   {
@@ -482,7 +482,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Concentração, até 1 minuto",
     description: "Uma criatura disposta que você tocar ganha pontos de vida temporários e é imune a medo.",
-    prepared: true,
+    prepared: false,
     classes: ["bard", "paladin"]
   },
   {
@@ -495,7 +495,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Concentração, até 1 hora",
     description: "Você escolhe uma criatura que você possa ver dentro do alcance e mystical a marca. Você tem vantagem em testos de Percepção e Survival para encontrar a criatura, e causa 1d6 de dano extra quando a ataca.",
-    prepared: true,
+    prepared: false,
     classes: ["ranger", "paladin"]
   },
   {
@@ -508,7 +508,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (sementes de qualquer planta)",
     duration: "Concentração, até 1 minuto",
     description: "Plantas gramíneas e ervas em uma área de 20 pés de raio se tornam grudentas e difíceis. Cada criatura na área deve fazer uma salvaguarda de Força ou fica restrita.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "ranger"]
   },
   {
@@ -521,7 +521,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Concentração, até 1 hora",
     description: "Você cria uma esfera de névoa pesada com raio de 20 pés. A área é heavily obscured.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "ranger", "wizard", "sorcerer"]
   },
   {
@@ -534,7 +534,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma baga)",
     duration: "Instantânea",
     description: "Você cria até 10 bagas mágicas. Cada baga restaura 1 ponto de vida quando comida.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "ranger"]
   },
   {
@@ -547,7 +547,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma perna de rã)",
     duration: "1 minuto",
     description: "Você toca uma criatura. Seu salto em distância é triplicado até a magia terminar.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "ranger", "sorcerer", "wizard"]
   },
   {
@@ -560,7 +560,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pouco de comida)",
     duration: "24 horas",
     description: "Um animal beast que você possa ver dentro do alcance deve fazer uma salvaguarda de Sabedoria. Se falhar, o animal considera você um amigo.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "ranger"]
   },
 
@@ -575,7 +575,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você cria três raios de fogo. Cada raio atinge uma criatura ou objeto que você possa ver dentro do alcance. Cada raio causa 6d6 de dano de fogo.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer"]
   },
   {
@@ -588,7 +588,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V",
     duration: "Instantânea",
     description: "Você se teletransporta até 30 pés para um espaço desocupado que você possa ver.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer", "warlock", "bard", "cleric", "druid"]
   },
   {
@@ -614,7 +614,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Concentração, até 1 minuto",
     description: "Você cria uma arma spectral flutuante. Como uma ação bônus, você pode fazer a arma atacar uma criatura a 5 pés dela, causando 1d8 + seu modificador de habilidade de dano de força.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "paladin"]
   },
   {
@@ -627,7 +627,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pequeno pano de seda)",
     duration: "8 horas",
     description: "Até três criaturas à sua escolha ganham 5 pontos de vida temporários e seu máximo de pontos de vida aumenta em 5.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "paladin"]
   },
   {
@@ -640,7 +640,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V",
     duration: "Instantânea",
     description: "Você evoca healing energy que pode restore up to six creatures. Cada criatura reganha 2d8 + seu modificador de pontos de vida.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "druid"]
   },
   {
@@ -653,7 +653,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma pequena corda reta)",
     duration: "Concentração, até 1 minuto",
     description: "Você escolha um humanoid que você possa ver dentro do alcance. Ele deve fazer uma salvaguarda de Sabedoria. Se falhar, está paralizado.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "warlock", "wizard", "sorcerer", "bard"]
   },
   {
@@ -666,7 +666,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Concentração, até 10 minutos",
     description: "Para a duração, não há som em uma esfera de 20 pés de raio centrada em um ponto à sua escolha dentro do alcance.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "bard", "ranger"]
   },
   {
@@ -679,7 +679,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, M (pêlo de morcego com gota de piche)",
     duration: "Concentração, até 10 minutos",
     description: "Você cria uma esfera de escuridão mágica com raio de 15 pés. A esfera se move com você e está heavily obscured.",
-    prepared: true,
+    prepared: false,
     classes: ["warlock", "sorcerer", "wizard"]
   },
   {
@@ -692,7 +692,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma gota de betume e uma aranha)",
     duration: "Concentração, até 1 hora",
     description: "Uma criatura que você tocar ganha a habilidade de escalar superfícies verticais, mesmo de cabeça para baixo.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "sorcerer", "warlock", "wizard"]
   },
   {
@@ -705,7 +705,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pouco de teia de aranha)",
     duration: "Concentração, até 1 hora",
     description: "Você cria uma área de teias em um ponto à sua escolha. A área é difficult terrain e qualquer criatura que comece seu turno na área deve fazer uma salvaguarda de Força ou fica restrita.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer"]
   },
   {
@@ -718,7 +718,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma agulha de bordar)",
     duration: "Concentração, até 1 minuto",
     description: "Você cria uma nuvem de adagas flutuantes em um ponto à sua escolha. Qualquer criatura que comece seu turno na nuvem sofre 4d4 de dano de perfuração.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer", "warlock", "bard"]
   },
   {
@@ -731,7 +731,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (pêlo ou cabelo de uma besta)",
     duration: "Concentração, até 1 hora",
     description: "Você toca uma criatura e escolhe uma habilidade. A criatura ganha vantagem em testes dessa habilidade.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "bard", "sorcerer", "wizard"]
   },
   {
@@ -744,7 +744,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (sementes de moonflower)",
     duration: "Concentração, até 1 minuto",
     description: "Você cria um feixe de luz lunar. Cada criatura no feixe deve fazer uma salvaguarda de Constituição ou sofre 2d10 de dano radiante.",
-    prepared: true,
+    prepared: false,
     classes: ["druid"]
   },
   {
@@ -757,7 +757,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pouco de pó ou terra)",
     duration: "Concentração, até 1 minuto",
     description: "Você cria uma tempestade de granizo em um cilindro de 40 pés de altura e 10 pés de raio. A área é heavily obscured e difficult terrain.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "wizard", "sorcerer"]
   },
 
@@ -772,7 +772,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pequeno bola de enxofre e fósforo)",
     duration: "Instantânea",
     description: "Uma explosão brilhante irrompe do seu ponto. Cada criatura em uma esfera de 20 pés de raio centrada nesse ponto deve fazer uma salvaguarda de Destreza. Uma criatura sofre 8d6 de dano de fogo em uma falha, ou metade do dano em um sucesso.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer"]
   },
   {
@@ -811,7 +811,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Escolha uma criatura, objeto ou efeito mágico. Você faz uma rolagem de habilidade de conjuração contra o CD 10 + o nível da magia. Se sucesso, a magia termina.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "druid", "paladin", "ranger", "bard", "sorcerer", "warlock", "wizard"]
   },
   {
@@ -824,7 +824,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (diamantes no valor de 300 po)",
     duration: "Instantânea",
     description: "Você toca uma criatura que morreu nos últimos 10 minutos. Ela retorna à vida com 1 ponto de vida.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "paladin"]
   },
   {
@@ -837,7 +837,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pequeno símbolo sagrado)",
     duration: "Concentração, até 10 minutos",
     description: "Você invoca espíritos flutuantes. Qualquer criatura hostil que entrar na área ou começar seu turno lá deve fazer uma salvaguarda de Sabedoria. Se falhar, sofre 3d8 de dano radiante (se bom) ou necrótico (se mau).",
-    prepared: true,
+    prepared: false,
     classes: ["cleric"]
   },
   {
@@ -863,7 +863,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Concentração, até 10 minutos",
     description: "Uma nuvem de tempestade aparece no ar. Como uma ação, você pode chamar um raio que causa 3d10 de dano de relâmpago.",
-    prepared: true,
+    prepared: false,
     classes: ["druid"]
   },
   {
@@ -876,7 +876,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma pequena bolsa de seda com comida)",
     duration: "Concentração, até 1 hora",
     description: "Você conjura feixes que se tornam animais. Você pode conjurar 2 beast de Challenge Rating 1/4 ou menos, 4 beast de CR 1/2 ou menos, ou 8 beast de CR 1/4 ou menos.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "ranger"]
   },
   {
@@ -902,7 +902,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma pena de coruja branca)",
     duration: "Concentração, até 1 minuto",
     description: "Você projeta um fantasma de medo. Cada criatura em um cone deve fazer uma salvaguarda de Sabedoria. Se falhar, fica com medo de você.",
-    prepared: true,
+    prepared: false,
     classes: ["warlock", "wizard", "bard"]
   },
   {
@@ -915,7 +915,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma folha de shamrock)",
     duration: "Concentração, até 1 minuto",
     description: "Uma criatura disposta que você tocar ganha ação adicional e velocidade dobrada. Quando a magia termina, a criatura sofre 1 nível de exaustão.",
-    prepared: true,
+    prepared: false,
     classes: ["sorcerer", "wizard"]
   },
   {
@@ -928,7 +928,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma gota de mel)",
     duration: "Concentração, até 1 minuto",
     description: "Você altera o tempo em torno de até seis criaturas. Cada criatura deve fazer uma salvaguarda de Sabedoria. Se falhar, sua velocidade é halved e só pode usar uma ação ou movimento.",
-    prepared: true,
+    prepared: false,
     classes: ["sorcerer", "wizard"]
   },
   {
@@ -941,7 +941,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um ovo podre e um pouco de alho)",
     duration: "Concentração, até 1 minuto",
     description: "Você cria uma esfera de gás amarelo e fétido. Qualquer criatura que termine seu turno na nuvem deve fazer uma salvaguarda de Constituição ou fica poisoned.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer"]
   },
   {
@@ -954,7 +954,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma pequena agulha de cristal)",
     duration: "8 horas",
     description: "Você cria uma cúpula de força que abriga até nove criaturas de tamanho médio ou menor. É resistente ao clima e impede entrada de criaturas.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "bard"]
   },
 
@@ -969,7 +969,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pouco de fósforo)",
     duration: "Concentração, até 1 minuto",
     description: "Finas chamas irrompem de você. Você tem resistência a dano de fogo, e quando uma criatura a 5 pés de você lhe atingir com um ataque corpo a corpo, ela sofre 2d10 de dano de fogo.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer"]
   },
   {
@@ -995,7 +995,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma lagarta em âmbar)",
     duration: "Concentração, até 1 hora",
     description: "Você transforma uma criatura que você possa ver em uma beast com CR igual ou menor. A criatura assume os stats da beast.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer", "bard"]
   },
   {
@@ -1008,7 +1008,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (diamante no valor de 100 po)",
     duration: "Concentração, até 1 hora",
     description: "Você toca uma criatura disposta. Ela ganha resistência a dano contundante, perfurante e cortante não mágico.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "ranger", "sorcerer", "wizard"]
   },
   {
@@ -1021,7 +1021,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pouco de prata em pó)",
     duration: "8 horas",
     description: "Você toca uma criatura e a protege contra morte. Se a criatura sofrer dano que a reduziria a 0 pontos de vida, ela cai para 1 ponto de vida em vez disso.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "paladin"]
   },
   {
@@ -1034,7 +1034,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V",
     duration: "8 horas",
     description: "Você evoca um guardião celestial. Ele ocupa um espaço e ataca qualquer criatura hostil que entrar em seu alcance.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric"]
   },
   {
@@ -1047,7 +1047,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um pouco de pó ou terra)",
     duration: "Instantânea",
     description: "Você cria uma tempestade de granizo e pedras. Cada criatura em um cilindro de 20 pés de raio sofre 2d8 de dano contundante e 4d6 de dano de gelo.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "sorcerer", "wizard"]
   },
   {
@@ -1060,7 +1060,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma folha de carvalho)",
     duration: "Concentração, até 1 hora",
     description: "Você descreve ou nomeia uma criatura. Você sente a direção da criatura se ela estiver no mesmo plano.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "druid", "paladin", "ranger", "bard", "wizard"]
   },
   {
@@ -1073,7 +1073,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um objeto que o alvo odeia)",
     duration: "Concentração, até 1 minuto",
     description: "Você tenta banir uma criatura. Se falhar em uma salvaguarda de Carisma, é banida para um plano demônio por 1 minuto.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "paladin", "warlock", "wizard"]
   },
   {
@@ -1086,7 +1086,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Você causa necromantic energy em uma criatura. Ela sofre 8d8 de dano necrótico. Plantas e plant creatures têm desvantagem na salvaguarda.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "warlock", "wizard"]
   },
   {
@@ -1099,7 +1099,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (três nozes)",
     duration: "Concentração, até 1 minuto",
     description: "Você causa confusão em criaturas. Cada criatura deve fazer uma salvaguarda de Sabedoria. Se falhar, fica confused e age aleatoriamente.",
-    prepared: true,
+    prepared: false,
     classes: ["bard", "druid", "sorcerer", "wizard"]
   },
   {
@@ -1112,7 +1112,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V",
     duration: "Instantânea",
     description: "Você se teletransporta até 500 pés para um espaço desocupado que você possa ver. Você pode levar uma criatura disposta.",
-    prepared: true,
+    prepared: false,
     classes: ["warlock", "wizard", "sorcerer", "bard"]
   },
   {
@@ -1125,7 +1125,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma pedra, um pouco de terra e um pouco de água)",
     duration: "24 horas",
     description: "Você cria uma ilusão de terreno natural. A ilusão parece real mas não tem substância.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "ranger", "wizard", "bard"]
   },
 
@@ -1140,7 +1140,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um cristal ou agulha de metal)",
     duration: "Instantânea",
     description: "Uma explosão de ar frio irrompe de suas mãos. Cada criatura em um cone de 60 pés deve fazer uma salvaguarda de Constituição. Uma criatura sofre 12d8 de dano de gelo em uma falha, ou metade do dano em um sucesso.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard", "sorcerer"]
   },
   {
@@ -1166,7 +1166,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Concentração, até 1 minuto",
     description: "Você tenta dominar um humanoid. Se falhar em uma salvaguarda de Sabedoria, é charmed por você e deve obedecer seus comandos.",
-    prepared: true,
+    prepared: false,
     classes: ["bard", "warlock", "wizard", "sorcerer"]
   },
   {
@@ -1179,7 +1179,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma bola de cristal no valor de 100 po)",
     duration: "Concentração, até 10 minutos",
     description: "Você pode observar uma criatura ou objeto à distância. Você vê e ouve como se estivesse lá.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "druid", "paladin", "ranger", "bard", "sorcerer", "warlock", "wizard"]
   },
   {
@@ -1192,7 +1192,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (diamantes no valor de 500 po)",
     duration: "Instantânea",
     description: "Você retorna uma criatura morta à vida. Ela retorna com 1 ponto de vida e pode sofrer uma penalidade permanente.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "paladin"]
   },
   {
@@ -1205,7 +1205,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (sementes de fogo)",
     duration: "Instantânea",
     description: "Uma coluna de fogo divino desce do céu. Cada criatura em um cilindro de 10 pés de raio sofre 4d8 de dano de fogo e 4d8 de dano radiante.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric"]
   },
   {
@@ -1218,7 +1218,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Instantânea",
     description: "Até seis criaturas à sua escolha dentro do alcance reganham 3d8 + seu modificador de pontos de vida.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "druid", "paladin", "bard"]
   },
   {
@@ -1231,7 +1231,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (pó de diamante no valor de 100 po)",
     duration: "Instantânea",
     description: "Você remove todos os efeitos de uma criatura, incluindo curses, diseases, poisons, blindness, deafness e reduction de habilidades.",
-    prepared: true,
+    prepared: false,
     classes: ["cleric", "druid", "paladin", "bard"]
   },
   {
@@ -1244,7 +1244,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (um símbolo da autoridade da criatura)",
     duration: "24 horas",
     description: "Você tenta vincular uma celestial, elemental, fey ou fiend. Se falhar em uma salvaguarda de Carisma, deve servir você por 24 horas.",
-    prepared: true,
+    prepared: false,
     classes: ["warlock", "wizard"]
   },
   {
@@ -1257,7 +1257,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Concentração, até 1 minuto",
     description: "Você tenta modificar memórias de uma criatura. Se falhar em uma salvaguarda de Sabedoria, você pode alterar, apagar ou implantar memórias.",
-    prepared: true,
+    prepared: false,
     classes: ["bard", "wizard"]
   },
   {
@@ -1270,7 +1270,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S",
     duration: "Concentração, até 8 horas",
     description: "Você altera a aparência física de criaturas. Cada criatura pode parecer qualquer humanoid de tamanho médio ou menor.",
-    prepared: true,
+    prepared: false,
     classes: ["bard", "sorcerer", "wizard"]
   },
   {
@@ -1283,7 +1283,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (argila e água)",
     duration: "Instantânea",
     description: "Você transforma rocha em lama ou lama em rocha. A área afetada é um cubo de 40 pés.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "wizard"]
   },
   {
@@ -1296,7 +1296,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (pó de quartzo ou vidro moído)",
     duration: "Concentração, até 10 minutos",
     description: "Você cria uma parede invisível de força. A parede não pode ser danificada e bloqueia movimento e magias.",
-    prepared: true,
+    prepared: false,
     classes: ["wizard"]
   },
   {
@@ -1309,7 +1309,7 @@ export const DEFAULT_SPELLS: Spell[] = [
     components: "V, S, M (uma pequena pedra)",
     duration: "Instantânea",
     description: "Você cria uma parede de pedra. A parede pode ter qualquer forma e tem 6 polegadas de espessura.",
-    prepared: true,
+    prepared: false,
     classes: ["druid", "wizard"]
   }
 ];
@@ -1317,7 +1317,7 @@ export const DEFAULT_SPELLS: Spell[] = [
 export const getSpellsByClass = (classKey: string, level: number): Spell[] => {
   return DEFAULT_SPELLS.filter(spell => 
     spell.classes?.includes(classKey) && 
-    spell.level <= Math.min(level, 5)
+    spell.level <= level
   );
 };
 

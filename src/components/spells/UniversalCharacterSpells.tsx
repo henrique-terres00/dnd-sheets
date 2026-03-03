@@ -14,16 +14,29 @@ interface UniversalCharacterSpellsProps {
 }
 
 export function UniversalCharacterSpells({ character, onUpdate }: UniversalCharacterSpellsProps) {
-  const [activeTab, setActiveTab] = useState<"spells" | "cantrips" | "slots">("spells");
+  const [activeTab, setActiveTab] = useState<"spells" | "cantrips">("spells");
   const [searchTerm, setSearchTerm] = useState("");
   const [cantripSearchTerm, setCantripSearchTerm] = useState("");
 
   // Initialize with class-specific spell data (excluding cantrips)
-  const [spells, setSpells] = useState<Spell[]>(() =>
-    getSpellsByClass(character.classKey || "", character.level).filter((spell) => spell.level > 0)
-  );
+  const [spells, setSpells] = useState<Spell[]>([]);
+  const [cantrips, setCantrips] = useState<Spell[]>([]);
 
-  const [cantrips, setCantrips] = useState<Spell[]>(() => getCantripsByClass(character.classKey || ""));
+  // Update spells when character changes
+  useEffect(() => {
+    // Check if character already has saved spells
+    if (character.characterSpells) {
+      setSpells(character.characterSpells.spells || []);
+      setCantrips(character.characterSpells.cantrips || []);
+    } else {
+      // Use default spells for new characters
+      const classSpells = getSpellsByClass(character.classKey || "", character.level).filter((spell) => spell.level > 0);
+      const classCantrips = getCantripsByClass(character.classKey || "");
+      
+      setSpells(classSpells);
+      setCantrips(classCantrips);
+    }
+  }, [character.classKey, character.level, character.className, character.characterSpells]);
 
   // Calculate spell slots based on character level and class
   const [spellSlots, setSpellSlots] = useState<SpellSlot[]>([]);
@@ -101,22 +114,11 @@ export function UniversalCharacterSpells({ character, onUpdate }: UniversalChara
     saveSpellsState(spells, updatedCantrips, spellSlots);
   };
 
-  const resetSpellSlots = () => {
-    const resetSlots = spellSlots.map((slot) => ({ ...slot, used: 0 }));
-    setSpellSlots(resetSlots);
-    saveSpellsState(spells, cantrips, resetSlots);
-  };
-
+  
   return (
     <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
-      <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3 flex items-center justify-between">
+      <h3 className="text-sm font-medium text-[var(--app-fg)] mb-3">
         <span>🔮 Magias</span>
-        <button
-          onClick={resetSpellSlots}
-          className="text-xs px-2 py-1 rounded border border-[var(--app-border)] bg-[var(--app-bg)] text-[var(--app-muted)] hover:text-[var(--app-fg)]"
-        >
-          Resetar Slots
-        </button>
       </h3>
 
       {/* Spellcasting Info */}
@@ -148,14 +150,6 @@ export function UniversalCharacterSpells({ character, onUpdate }: UniversalChara
           }`}
         >
           Truques
-        </button>
-        <button
-          onClick={() => setActiveTab("slots")}
-          className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-            activeTab === "slots" ? "bg-purple-500 text-white" : "bg-[var(--app-bg)] text-[var(--app-muted)] hover:text-[var(--app-fg)]"
-          }`}
-        >
-          Espaços
         </button>
       </div>
 
@@ -243,22 +237,6 @@ export function UniversalCharacterSpells({ character, onUpdate }: UniversalChara
         </div>
       )}
 
-      {/* Spell Slots Tab */}
-      {activeTab === "slots" && (
-        <div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {spellSlots.map((slot) => (
-              <div key={slot.level} className="border border-[var(--app-border)] rounded-lg p-2 text-center">
-                <div className="text-sm font-medium text-[var(--app-fg)]">Nível {slot.level}</div>
-                <div className="text-lg font-bold text-purple-500">
-                  {slot.total - slot.used}/{slot.total}
-                </div>
-                <div className="text-xs text-[var(--app-muted)]">Restantes</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
   );
 }

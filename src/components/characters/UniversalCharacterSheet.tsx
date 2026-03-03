@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { abilityMod, formatSigned, proficiencyBonusFromLevel, SKILL_TO_ABILITY } from "@/lib/dnd5e";
 import { getCharacter, upsertCharacter } from "@/lib/characterStore";
 import { getSrdClass, getSrdRace, SRD_CLASSES, SRD_RACES } from "@/lib/srd";
@@ -103,44 +102,114 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const handleBackToSession = () => {
+    if (isSession && sessionCode) {
+      router.push(`/session/${sessionCode.toUpperCase()}`);
+    } else {
+      router.push('/characters');
+    }
+  };
   const session = searchParams.get('session');
 
   // Load character
-  useEffect(() => {
-    const loadCharacter = async () => {
-      try {
-        if (isSession && session) {
-          // Load from session
-          const { getSession } = await import("@/lib/supabase");
-          const sessionData = await getSession(session);
-          if (sessionData && sessionData.characters) {
-            const foundCharacter = sessionData.characters.find((c: Character) => c.id === id);
-            setCharacter(foundCharacter || null);
+  const loadCharacter = async () => {
+    try {
+      // Check if this is a draft character
+      const isDraft = searchParams.get('draft') === '1';
+      
+      if (isDraft && !isSession) {
+        // Load from sessionStorage for drafts
+        try {
+          const draftData = window.sessionStorage.getItem(`dnd-sheets.character-draft.${id}`);
+          if (draftData) {
+            const draftCharacter = JSON.parse(draftData);
+            setCharacter(draftCharacter);
+          } else {
+            // If no draft found, try normal character
+            const loadedCharacter = await getCharacter(id);
+            setCharacter(loadedCharacter);
           }
-        } else {
-          // Load from local storage
+        } catch (sessionError) {
+          // Fallback to normal character
           const loadedCharacter = await getCharacter(id);
           setCharacter(loadedCharacter);
         }
-      } catch (error) {
-        console.error('Error loading character:', error);
-        setCharacter(null);
-      } finally {
-        setLoading(false);
+      } else if (isSession && session) {
+        // Load from session
+        const { getSession } = await import("@/lib/supabase");
+        const sessionData = await getSession(session);
+        if (sessionData && sessionData.characters) {
+          const foundCharacter = sessionData.characters.find((c: Character) => c.id === id);
+          setCharacter(foundCharacter || null);
+        }
+      } else {
+        // Load from local storage
+        const loadedCharacter = await getCharacter(id);
+        setCharacter(loadedCharacter);
       }
-    };
+    } catch (error) {
+      console.error('Error loading character:', error);
+      setCharacter(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadCharacter();
   }, [id, isSession, session]);
+
+  // Reload character when searchParams change (for drafts)
+  useEffect(() => {
+    if (searchParams.get('draft') === '1') {
+      loadCharacter();
+    }
+  }, [searchParams]);
+
+  // Save draft character as permanent
+  const saveDraftAsCharacter = async () => {
+    if (!character) return;
+    
+    const isDraft = searchParams.get('draft') === '1';
+    if (!isDraft) return; // Only save if it's a draft
+    
+    try {
+      // Save to local storage as permanent character
+      await upsertCharacter(character);
+      
+      // Remove from sessionStorage
+      try {
+        window.sessionStorage.removeItem(`dnd-sheets.character-draft.${id}`);
+      } catch (sessionError) {
+        console.log('Could not remove from sessionStorage');
+      }
+      
+      // Redirect to normal character page
+      window.location.href = `/characters/${id}`;
+    } catch (error) {
+      console.error('Error saving character:', error);
+      alert('Erro ao salvar personagem');
+    }
+  };
 
   // Update character
   const update = async (updates: Partial<Character>) => {
     if (!character) return;
 
     const updatedCharacter = { ...character, ...updates };
+    const isDraft = searchParams.get('draft') === '1';
     
     try {
-      if (isSession && session) {
+      if (isDraft && !isSession) {
+        // Save to sessionStorage for drafts
+        try {
+          window.sessionStorage.setItem(`dnd-sheets.character-draft.${id}`, JSON.stringify(updatedCharacter));
+        } catch (sessionError) {
+          console.error('Failed to save draft to sessionStorage:', sessionError);
+        }
+      } else if (isSession && session) {
         // Save to session
         const { updateSession, getSession } = await import("@/lib/supabase");
         const sessionData = await getSession(session);
@@ -150,9 +219,41 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           );
           await updateSession(session, { characters: updatedCharacters });
         }
+
+        // Also update the original local character if it exists
+        try {
+          const originalCharacter = await getCharacter(id);
+          if (originalCharacter) {
+            await upsertCharacter(updatedCharacter);
+          }
+        } catch (localError) {
+          // Local character might not exist, that's ok
+          console.log('Local character not found, only session updated');
+        }
       } else {
         // Save to local storage
         await upsertCharacter(updatedCharacter);
+
+        // Also update in any active sessions if this character is imported there
+        try {
+          const currentSession = localStorage.getItem('currentSession');
+          if (currentSession) {
+            const { getSession, updateSession } = await import("@/lib/supabase");
+            const sessionData = await getSession(currentSession);
+            if (sessionData && sessionData.characters) {
+              const characterInSession = sessionData.characters.find((c: Character) => c.id === id);
+              if (characterInSession) {
+                const updatedCharacters = sessionData.characters.map((c: Character) => 
+                  c.id === id ? updatedCharacter : c
+                );
+                await updateSession(currentSession, { characters: updatedCharacters });
+                console.log('Character also updated in active session');
+              }
+            }
+          }
+        } catch (sessionError) {
+          console.log('Session update failed, local character updated');
+        }
       }
       setCharacter(updatedCharacter);
     } catch (error) {
@@ -202,9 +303,12 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           <div className="text-sm text-[var(--app-muted)]">Personagem não encontrado.</div>
         </div>
         <div>
-          <Link className="text-sm font-medium underline" href={isSession && sessionCode ? `/session/${sessionCode}` : "/characters"}>
+          <button 
+            className="text-sm font-medium underline hover:text-[var(--app-fg)]"
+            onClick={() => router.push(isSession && sessionCode ? `/session/${sessionCode.toUpperCase()}` : "/characters")}
+          >
             Voltar para {isSession ? "Sessão" : "Personagens"}
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -215,15 +319,26 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="text-xs text-[var(--app-muted)]">Ficha {isSession ? "da Sessão" : "Local"} (5e 2014)</div>
+          {searchParams.get('draft') === '1' && !isSession && (
+            <div className="text-xs text-orange-500 font-medium mb-1">⚠️ Rascunho - Não salvo</div>
+          )}
           <h1 className="truncate text-xl font-semibold tracking-tight">{character.name || "(Sem nome)"}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={isSession && sessionCode ? `/session/${sessionCode}` : "/characters"}
-            className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)]"
+          {searchParams.get('draft') === '1' && !isSession && (
+            <button
+              onClick={saveDraftAsCharacter}
+              className="rounded-xl border border-green-500 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-500 hover:bg-green-500/20 transition-colors"
+            >
+              Salvar
+            </button>
+          )}
+          <button
+            onClick={handleBackToSession}
+            className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-sm font-medium text-[var(--app-fg)] hover:bg-[var(--app-border)] transition-colors"
           >
             Voltar para {isSession ? "Sessão" : "Personagens"}
-          </Link>
+          </button>
         </div>
       </div>
 
