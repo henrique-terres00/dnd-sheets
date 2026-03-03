@@ -177,6 +177,19 @@ export function SessionSpellCaster({ isOpen, onClose, sessionCharacters, localCh
             await updateSession(sessionCode, { characters: updatedCharacters });
           }
         }
+        
+        // Also update the local character to keep them in sync
+        try {
+          const { upsertCharacter } = await import('@/lib/characterStore');
+          await upsertCharacter(updatedCharacter);
+          
+          // Disparar evento para sincronizar com outras abas
+          window.dispatchEvent(new CustomEvent('sessionCharacterUpdated', {
+            detail: { characterId: selectedCharacter.id }
+          }));
+        } catch (error) {
+          console.log('Local character not found, only session updated');
+        }
       }
 
       // 8. Update last cast with proper RollResult format

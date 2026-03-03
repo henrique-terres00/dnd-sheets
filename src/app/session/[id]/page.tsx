@@ -69,34 +69,28 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       }
     };
 
-    // Listener para novas rolagens (atualização local imediata) - otimizado
-    const handleNewRoll = (event: any) => {
-      if (event.detail && session) {
-        // Adicionar a rolagem diretamente ao estado local
-        const updatedSession = {
-          ...session,
-          rolls: [...(session.rolls || []), event.detail]
-        };
-        setSession(updatedSession);
+    // Listener para sincronização de personagens locais com sessão
+    const handleLocalCharacterUpdate = async (event: any) => {
+      if (event.detail && event.detail.sessionCode === sessionCode) {
+        console.log('Local character update received, refreshing session...');
+        try {
+          const updatedSession = await getSession(sessionCode);
+          if (updatedSession) {
+            setSession(updatedSession);
+          }
+        } catch (error) {
+          console.error('Error updating session after local character update:', error);
+        }
       }
     };
 
-    // Listener para atualizações de rolagens da sessão - otimizado
-    const handleSessionRollsUpdated = (event: any) => {
-      if (event.detail && event.detail.session) {
-        setSession(event.detail.session);
-      }
-    };
-
-    window.addEventListener('rollAdded', handleRollAdded);
-    window.addEventListener('newRoll', handleNewRoll);
-    window.addEventListener('sessionRollsUpdated', handleSessionRollsUpdated);
+    window.addEventListener('newRoll', handleRollAdded);
+    window.addEventListener('localCharacterUpdated', handleLocalCharacterUpdate);
 
     return () => {
       subscription.unsubscribe();
-      window.removeEventListener('rollAdded', handleRollAdded);
-      window.removeEventListener('newRoll', handleNewRoll);
-      window.removeEventListener('sessionRollsUpdated', handleSessionRollsUpdated);
+      window.removeEventListener('newRoll', handleRollAdded);
+      window.removeEventListener('localCharacterUpdated', handleLocalCharacterUpdate);
     };
   }, [sessionCode]);
 

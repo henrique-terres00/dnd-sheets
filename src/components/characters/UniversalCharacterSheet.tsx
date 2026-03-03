@@ -238,6 +238,22 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
     }
   }, [searchParams.get('draft')]); // Apenas o draft mudou
 
+  // useEffect para sincronizar alterações da sessão com ficha local
+  useEffect(() => {
+    const handleSessionCharacterUpdate = (event: any) => {
+      if (event.detail && event.detail.characterId === id) {
+        console.log('Session character update received for character:', id);
+        loadCharacter();
+      }
+    };
+
+    window.addEventListener('sessionCharacterUpdated', handleSessionCharacterUpdate);
+    
+    return () => {
+      window.removeEventListener('sessionCharacterUpdated', handleSessionCharacterUpdate);
+    };
+  }, [id, loadCharacter]);
+
   // Save draft character as permanent
   const saveDraftAsCharacter = async () => {
     if (!character) return;
@@ -288,9 +304,47 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           );
           await updateSession(session, { characters: updatedCharacters });
         }
+        
+        // Sincronizar QUALQUER alteração com ficha local também
+        const updateFields = Object.keys(updates);
+        console.log(`Syncing ${updateFields.length} field(s) from session to local:`, updateFields.join(', '));
+        try {
+          const { upsertCharacter } = await import('@/lib/characterStore');
+          await upsertCharacter(updatedCharacter);
+          
+          // Disparar evento para sincronizar com outras abas
+          window.dispatchEvent(new CustomEvent('sessionCharacterUpdated', {
+            detail: { characterId: id }
+          }));
+        } catch (error) {
+          console.log('Local character not found, only session updated');
+        }
       } else {
         // Save to local storage APENAS UMA VEZ
         await upsertCharacter(updatedCharacter);
+        
+        // Se houver sessão ativa, sincronizar QUALQUER alteração com sessão também
+        const currentSession = localStorage.getItem('currentSession');
+        if (currentSession) {
+          const updateFields = Object.keys(updates);
+          console.log(`Syncing ${updateFields.length} field(s) from local to session:`, updateFields.join(', '));
+          try {
+            const sessionData = await getSession(currentSession);
+            if (sessionData && sessionData.characters) {
+              const updatedSessionCharacters = sessionData.characters.map((c: Character) => 
+                c.id === id ? updatedCharacter : c
+              );
+              await updateSession(currentSession, { characters: updatedSessionCharacters });
+              
+              // Disparar evento para sincronizar com outras abas da sessão
+              window.dispatchEvent(new CustomEvent('localCharacterUpdated', {
+                detail: { characterId: id, sessionCode: currentSession }
+              }));
+            }
+          } catch (error) {
+            console.log('Session not found or error syncing to session:', error);
+          }
+        }
       }
       setCharacter(updatedCharacter);
     } catch (error) {
