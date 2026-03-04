@@ -279,12 +279,13 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
     }
   };
 
-  // Função update otimizada - sem chamadas redundantes
   const update = async (updates: Partial<Character>) => {
     if (!character) return;
 
     const updatedCharacter = { ...character, ...updates };
     const isDraft = searchParams.get('draft') === '1';
+    
+    setCharacter(updatedCharacter);
     
     try {
       if (isDraft && !isSession) {
@@ -295,7 +296,7 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           console.error('Failed to save draft to sessionStorage:', sessionError);
         }
       } else if (isSession && session) {
-        // Save to session APENAS UMA VEZ
+        // Save to session
         const sessionData = await getSession(session);
         if (sessionData && sessionData.characters) {
           const updatedCharacters = sessionData.characters.map((c: Character) => 
@@ -304,12 +305,10 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           await updateSession(session, { characters: updatedCharacters });
         }
         
-        // Sincronizar QUALQUER alteração com ficha local também
         try {
           const { upsertCharacter } = await import('@/lib/characterStore');
           await upsertCharacter(updatedCharacter);
           
-          // Disparar evento para sincronizar com outras abas
           window.dispatchEvent(new CustomEvent('sessionCharacterUpdated', {
             detail: { characterId: id }
           }));
@@ -317,10 +316,8 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           console.log('Local character not found, only session updated');
         }
       } else {
-        // Save to local storage APENAS UMA VEZ
         await upsertCharacter(updatedCharacter);
         
-        // Se houver sessão ativa, sincronizar QUALQUER alteração com sessão também
         const currentSession = localStorage.getItem('currentSession');
         if (currentSession) {
           try {
@@ -331,7 +328,6 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
               );
               await updateSession(currentSession, { characters: updatedSessionCharacters });
               
-              // Disparar evento para sincronizar com outras abas da sessão
               window.dispatchEvent(new CustomEvent('localCharacterUpdated', {
                 detail: { characterId: id, sessionCode: currentSession }
               }));
@@ -341,9 +337,9 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           }
         }
       }
-      setCharacter(updatedCharacter);
     } catch (error) {
       console.error('Error updating character:', error);
+      setCharacter(character);
     }
   };
 
