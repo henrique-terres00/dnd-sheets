@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { abilityMod, formatSigned, proficiencyBonusFromLevel, SKILL_TO_ABILITY } from "@/lib/dnd5e";
+import { abilityMod, formatSigned, proficiencyBonusFromLevel, SKILL_TO_ABILITY, isSkillAvailableForClass, getSelectedSkillCount, canChooseMoreSkills, CLASS_SKILL_COUNT } from "@/lib/dnd5e";
 import { getCharacter, upsertCharacter } from "@/lib/characterStore";
 import { getSrdClass, getSrdRace, SRD_CLASSES, SRD_RACES } from "@/lib/srd";
 import { CharacterEquipment } from "@/components/equipment/CharacterEquipment";
@@ -242,7 +242,6 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
   useEffect(() => {
     const handleSessionCharacterUpdate = (event: any) => {
       if (event.detail && event.detail.characterId === id) {
-        console.log('Session character update received for character:', id);
         loadCharacter();
       }
     };
@@ -306,8 +305,6 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
         }
         
         // Sincronizar QUALQUER alteração com ficha local também
-        const updateFields = Object.keys(updates);
-        console.log(`Syncing ${updateFields.length} field(s) from session to local:`, updateFields.join(', '));
         try {
           const { upsertCharacter } = await import('@/lib/characterStore');
           await upsertCharacter(updatedCharacter);
@@ -326,8 +323,6 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
         // Se houver sessão ativa, sincronizar QUALQUER alteração com sessão também
         const currentSession = localStorage.getItem('currentSession');
         if (currentSession) {
-          const updateFields = Object.keys(updates);
-          console.log(`Syncing ${updateFields.length} field(s) from local to session:`, updateFields.join(', '));
           try {
             const sessionData = await getSession(currentSession);
             if (sessionData && sessionData.characters) {
@@ -558,30 +553,65 @@ export default function UniversalCharacterSheet({ id, isSession = false, session
           </div>
 
           <div className={boxClass()}>
-            <h3 className="text-lg font-semibold mb-4">Perícias</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {SKILLS.map((skill) => (
-                <div key={skill.key} className="flex items-center justify-between p-2 border border-[var(--app-border)] rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={character.skillProficiencies[skill.key] || false}
-                      onChange={(e) => update({
-                        skillProficiencies: {
-                          ...character.skillProficiencies,
-                          [skill.key]: e.target.checked
-                        }
-                      })}
-                      className="rounded border-[var(--app-border)] bg-[var(--app-surface)]"
-                    />
-                    <span className="text-sm text-[var(--app-fg)]">{skill.label}</span>
-                  </div>
-                  <div className="text-sm font-medium text-purple-500">
-                    {formatSigned(abilityMod(character.abilities[SKILL_TO_ABILITY[skill.key]]) + (character.skillProficiencies[skill.key] ? pb : 0))}
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Perícias</h3>
+              <div className="text-xs text-[var(--app-muted)]">
+                {character.classKey ? `${getSelectedSkillCount(character)}/${CLASS_SKILL_COUNT[character.classKey] || 0} escolhidas` : ''}
+              </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {SKILLS.map((skill) => {
+                const isAvailable = isSkillAvailableForClass(skill.key, character.classKey);
+                const isSelected = character.skillProficiencies[skill.key] || false;
+                const canChoose = canChooseMoreSkills(character) || isSelected;
+                
+                return (
+                  <div 
+                    key={skill.key} 
+                    className={`flex items-center justify-between p-2 border rounded-lg transition-colors ${
+                      isAvailable 
+                        ? isSelected 
+                          ? 'border-green-500 bg-green-500/10' 
+                          : 'border-[var(--app-border)] bg-[var(--app-surface)] hover:bg-[var(--app-bg)]'
+                        : 'border-gray-600 bg-gray-900/50 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        disabled={!isAvailable || (!canChoose && !isSelected)}
+                        onChange={(e) => update({
+                          skillProficiencies: {
+                            ...character.skillProficiencies,
+                            [skill.key]: e.target.checked
+                          }
+                        })}
+                        className={`rounded border-[var(--app-border)] bg-[var(--app-surface)] ${
+                          !isAvailable || (!canChoose && !isSelected) ? 'cursor-not-allowed opacity-50' : ''
+                        }`}
+                      />
+                      <span className={`text-sm ${
+                        isAvailable ? 'text-[var(--app-fg)]' : 'text-gray-500 line-through'
+                      }`}>
+                        {skill.label}
+                        {!isAvailable && <span className="ml-1 text-xs"></span>}
+                      </span>
+                    </div>
+                    <div className={`text-sm font-medium ${
+                      isSelected ? 'text-green-400' : 'text-purple-500'
+                    }`}>
+                      {formatSigned(abilityMod(character.abilities[SKILL_TO_ABILITY[skill.key]]) + (isSelected ? pb : 0))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {!canChooseMoreSkills(character) && (
+              <div className="mt-3 text-xs text-orange-400 bg-orange-500/10 p-2 rounded">
+                ⚠️ Você já escolheu o máximo de perícias para sua classe ({CLASS_SKILL_COUNT[character.classKey!] || 0})
+              </div>
+            )}
           </div>
 
           <div className={boxClass()}>

@@ -72,7 +72,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     // Listener para sincronização de personagens locais com sessão
     const handleLocalCharacterUpdate = async (event: any) => {
       if (event.detail && event.detail.sessionCode === sessionCode) {
-        console.log('Local character update received, refreshing session...');
         try {
           const updatedSession = await getSession(sessionCode);
           if (updatedSession) {
